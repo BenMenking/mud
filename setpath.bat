@@ -1,0 +1,4 @@
+@ECHO OFF
+
+SET PATH=$PATH;c:\php\
+
