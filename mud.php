@@ -13,7 +13,7 @@ if( !$bind ) { die("Could not bind to port 23!\n"); }
 if( !socket_listen($server_sock) ) die("Could not listen on port 23!\n");
 
 $clients = array($server_sock);
-$client_meta = array();
+$client_meta = array('telnet'=>array());
 
 echo "Bound server to port 23\n";
 
@@ -32,25 +32,6 @@ while(true) {
 			// accept new client
 			$clients[] = $new_sock = socket_accept($server_sock);
 
-			// need to do some telnet command/options work ehre
-			$terms = '';
-			
-			// we're not going to ECHO
-			$terms .= $commands['IAC'] . $commands['WONT'] . $options['ECHO'];
-			
-			// no encryption
-			$terms .= $commands['IAC'] . $commands['WONT'] . $options['ENCRYPT'];
-/*
-			$data = @socket_read($new_sock, 1024, PHP_NORMAL_READ);
-			echo "INITIAL READ: \n" . hex_dump($data) . "\n";
-			socket_write($new_sock, $terms);						
-
-			$data = @socket_read($new_sock, 1024, PHP_NORMAL_READ);
-			echo "SECONDARY READ: \n" . hex_dump($data) . "\n";
-*/
-			//socket_write($new_sock, file_get_contents('intro.txt')
-			//	. "\r\n\r\n\r\nPlease enter your name: ");
-	
             socket_getpeername($new_sock, $ip);
 			
 			$client_meta[(int)$new_sock] = array('state'=>'login', 'username'=>'',
@@ -58,7 +39,10 @@ while(true) {
 				
 			$key = array_search($server_sock, $read);
 			unset($read[$key]);
-            echo "New client connected: {$ip}\n";			
+            echo "New client connected: {$ip}\n";	
+
+			// write out a TELNET NOP
+			socket_write($new_sock, file_get_contents('intro.txt'));
 		}
 		
 		foreach($read as $read_sock) {
@@ -76,27 +60,21 @@ while(true) {
 
 			$terms = array();
 			
-			echo hex_dump($data) . "\n\n";
-			$message = read($data, $terms);
-			echo "MESSAGE: $message\n\n";
+			//echo hex_dump($data) . "\n";
+			$message = trim(read_stream($data, $terms));
+			//var_dump($terms);
+			//echo "MESSAGE: $message\n\n";
 			
 			socket_getpeername($read_sock, $ip);
-			/*
-			if( $client_meta[(int)$read_sock]['state'] == 'login' ) {
-					echo "Hello, ". ucwords($data) . "\n";
-					$client_meta[(int)$read_sock]['username'] = ucwords($data);
-					$client_meta[(int)$read_sock]['state'] == 'playing';
-					
-					socket_write($read_sock, "\r\n$data > ");
-			}
-			else if( $client_meta[(int)$read_sock]['state'] == 'playing' ) {
-				socket_write($read_sock, "\r\n$data > ");
-			}
-			*/
+			
+			if( strlen($message) > 0 )
+				echo "client said '$message'\n";
 		}
 		
-		foreach($write as $write_sock) {
-			echo "FD $write_sock wants a write?\n";
+		if( $write !== null ) {
+			foreach($write as $write_sock) {
+				echo "FD $write_sock wants a write?\n";
+			}
 		}
 	}
 }
@@ -107,28 +85,41 @@ function show_prompt($socket) {
 	socket_write($socket, "\nUSER > ");
 }
 
-function read($data, &$terms) {
-	$message = '';
+function read_stream($data, &$terms) {
+	global $command_descriptions, $option_descriptions;
 	
-	for($a = 0; $a < strlen($data); $a++ ) {
-		if( $data[$a] == 0xff && $data[$a+1] == 0xff ) {
+	$message = '';
+	//echo "in read_stream()\n";
+	
+	//echo "data length: " . strlen($data) . "\n";
+	
+	for($a = 0; $a < strlen($data); ) {
+
+		if( ord($data[$a]) == 0xff && ord($data[$a+1]) == 0xff ) {
 			// special case where 0xFF is padded
-			$message .= 0xFF;
-			$a++;
+			$message .= ord(0xFF);
+			$a += 2;
 		}
-		else if( $data[$a] == 0xff ) {
-			$command = $data[$a++];
+		else if( ord($data[$a]) == 0xff ) {
+			$a++;	
+			$command = $command_descriptions[ord($data[$a])];
+			$a++;
+			$option = $option_descriptions[ord($data[$a])];
+			$a++;
+			//echo "DIKE: " . ord($data[$a]) . "\n";
 			
-			$option = '';
+			//while( $a < strlen($data) && ord($data[$a]) != 0xff ) {
+			//	$a++;
+			//}
+			//$a--;
 			
-			while( $data[$a] != 0xff ) {
-				$option .= $data[$a++];
-			}
-			
-			echo "Found COMMAND " . $command_descriptions[$option[0]] . " with extra data '" . $option . "\n";
+			//echo "Found COMMAND " . $command . " with extra data '" . $option . "'\n";
+			$terms[] = array($command=>$option);
 		}
 		else {
-			$message .= $data[$a];
+			//echo "MSG ADD: " . ord($data[$a]) . "\n";
+			$message .= ($data[$a]);
+			$a++;
 		}
 	}
 	
