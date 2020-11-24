@@ -2,33 +2,46 @@
 
 date_default_timezone_set('America/New_York');
 
+require_once('vendor/autoload.php');
+
 // this contains all of our TELNET protcol related stuff
-require('telnet.inc.php');
+require_once('telnet.inc.php');
+require_once('class.world.php');
+require_once('class.user.php');
+require_once('class.questions.php');
+
+// load our .env file into $_ENV
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 // create the socket we will be using
 $server_sock = socket_create(AF_INET, SOCK_STREAM, 0);
+
+echo "Server initializing... ";
 
 // problems, bail out
 if( !$server_sock ) { die("Could not create socket\n"); }
 
 // now we need to bind the port we want to listen to for new connections
 // and incoming data from clients
-$bind = socket_bind($server_sock, '0.0.0.0', '23');
+$bind = @socket_bind($server_sock, $_ENV['SERVER_ADDR'], $_ENV['SERVER_PORT']);
 
 // problems, bail out
-if( !$bind ) { die("Could not bind to port 23!\n"); }
+if( !$bind ) { die("Could not bind to {$_ENV['SERVER_ADDR']}:{$_ENV['SERVER_PORT']}!\n"); }
 
 // more problems.  another process must have bound to this port before us
-if( !socket_listen($server_sock) ) die("Could not listen on port 23!\n");
+if( !socket_listen($server_sock) ) die("Could not listen on {$_ENV['SERVER_ADDR']}:{$_ENV['SERVER_PORT']}!\n");
 
 // some variables to hold important information about our clients
 $clients = array($server_sock);
 $client_meta = array();
 
-echo "Bound server to port 23\n";
+echo "running on {$_ENV['SERVER_ADDR']}:{$_ENV['SERVER_PORT']}\n\n";
 
 $started = microtime(true);
 $timer = microtime(true);
+
+$questions = new Questions();
 
 // game loop
 while(true) {
@@ -40,7 +53,9 @@ while(true) {
 	$write = null;
 	$except = null;
 	
-	// if we have data to write to a client, we want to see when a write would not block
+	// if we have data to write to a client, we need to add that client's socket to the $write
+	// and the socket_select() will tell us if we can write without blocking
+	//
 	foreach($client_meta as $client) {
 		if( !empty($client['queued_messages']) ) {
 			$write[] = $client['socket'];
@@ -57,26 +72,31 @@ while(true) {
 	if( $num_changed === false ) die("socket_select() failed, reason: " .
         socket_strerror(socket_last_error()) . "\n");
 
+	// a socket signaled that a change was made.. could be a connect, read or disconnect
+	//
 	if( $num_changed > 0 ) {
+		// if the socket we got is not in our $clients array, it's a new connect
+		//
 		if( !empty($read) && in_array($server_sock, $read) ) {
-			echo "new client\n";
-			// accept new client
 			$clients[] = $new_sock = socket_accept($server_sock);
 
             socket_getpeername($new_sock, $ip);
-			echo "setup: $new_sock\n";
-			$client_meta[$new_sock] = array('state'=>'login', 'username'=>'',
-				'peername'=>$ip, 'queued_commands'=>array(), 'socket'=>$new_sock,
+			echo "[SERVER] setup socket for $new_sock\n";
+			$client_meta[(int)$new_sock] = array('state'=>'new', 'peername'=>$ip, 'queued_commands'=>array(), 'socket'=>$new_sock,
 				'queued_messages'=>array());
 				
 			$key = array_search($server_sock, $read);
 			unset($read[$key]);
-            echo "New client connected: {$ip}\n";	
+            echo "[$ip] connected\n";	
 
-			$client_meta[$new_sock]['queued_messages'][] = file_get_contents('intro.txt');
-			$client_meta[$new_sock]['queued_messages'][] = "What is thy name? ";
+			$client_meta[(int)$new_sock]['queued_messages'][] = file_get_contents('intro.txt');
+			$login_question = $questions->byId("login-prompt");
+			$client_meta[(int)$new_sock]['queued_messages'][] = $login_question['message'] . " ";
+			$client_meta[(int)$new_sock]['question'] = "login-prompt";
 		}
-		
+
+		// there is data we can read from a socket, so let's do that.  could also indicate a disconnect
+		//
 		if( !empty($read) ) {
 			foreach($read as $read_sock) {
 				 $data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
@@ -84,13 +104,10 @@ while(true) {
 				// check if the client is disconnected
 				if ($data === false) {
 					// remove client for $clients array
+					echo "[{$client_meta[(int)$read_sock]['peername']} disconnected\n";
 					$key = array_search($read_sock, $clients);
 					unset($clients[$key]);
-					
-					unset($client_meta[$read_sock]);
-					
-					echo "client disconnected.\n";
-					// continue to the next client to read from, if any
+					unset($client_meta[(int)$read_sock]);					
 					continue;
 				}
 
@@ -106,25 +123,26 @@ while(true) {
 				}
 				
 				if( !empty($terms) ) {
-					$client_meta[$read_sock]['ntv'] = $terms;
+					$client_meta[(int)$read_sock]['ntv'] = $terms;
 				}
 				
 				socket_getpeername($read_sock, $ip);
 				
 				if( count($message) > 0 )
-					echo "client said " . implode(',', $message) . "\n";
+					echo "[$ip] said '" . implode(',', $message) . "'\n";
 				
 				// add this command to the client's queue
 				foreach($message as $msg)
-					$client_meta[$read_sock]['queued_commands'][] = $msg;
+					$client_meta[(int)$read_sock]['queued_commands'][] = $msg;
 			}
 		}
 		
-		if( count($write) > 0 ) {
+		// we are able to write messages out to sockets without blocking
+		//
+		if( !empty($write) && count($write) > 0 ) {
 			foreach($write as $write_sock) {
-				
-				if( !empty($client_meta[$write_sock]['queued_messages']) ) {
-					$msg = array_shift($client_meta[$write_sock]['queued_messages']);
+				if( !empty($client_meta[(int)$write_sock]['queued_messages']) ) {
+					$msg = array_shift($client_meta[(int)$write_sock]['queued_messages']);
 				
 					socket_write($write_sock, $msg);
 				}
@@ -141,20 +159,127 @@ while(true) {
 	foreach($client_meta as $id=>&$client) {
 		$socket = $client['socket'];
 		
+		/**
+		 * A command was entered by the client, process it
+		 */
 		if( !empty($client['queued_commands']) ) {
 			$cmd = array_shift($client['queued_commands']);
 	
+			if( $client['state'] == 'new' ) {  // socket just setup and we don't have a User attached to this client
+				switch($client['question']) {
+					case "login-prompt":
+						// see if user exists
+						try {
+							$user = User::load($cmd);
+							$client['potential_user'] = $user;
+							$secret_question = $questions->byId(1006);
+							$client['queued_messages'][] = $secret_question['message'];
+							$client['question'] = 1006;
+						}
+						catch(Exception $e) {
+							//$client['queued_messages'][] = "That name has not been recorded in the Royal Register!\r\n\r\n";
+							$not_found_question = $questions->byId("start-registration");
+							$client['queued_messages'][] = $not_found_question['message'];
+							$client['question'] = "start-registration";
+							$client['create'] = ['username'=>$cmd];
+						}
+						break;
+					case "start-registration": // create user
+						//echo "We'd like to create a user, but it's not implemented yet\n";
+						//$client['queued_messages'][] = "Sorry, the quill has run out of ink and the name cannot be registered.\r\n\r\n";
+						$secret_question = $questions->byId("select-race");
+						$client['queued_messages'][] = $secret_question['message'];
+						$client['question'] = "select-race";
+					break;
+					case "select-race":
+						$secret_question = $questions->byId("select-class");
+						$client['queued_messages'][] = $secret_question['message'];
+						$client['question'] = "select-class";
+						$client['create']['race'] = $cmd;
+					break;
+					case "select-class":
+						$secret_question = $questions->byId("enter-password-1");
+						$client['queued_messages'][] = $secret_question['message'];
+						$client['question'] = "enter-password-1";
+						$client['create']['class'] = $cmd;
+					break;
+					case "enter-password-1":
+						$secret_question = $questions->byId("enter-password-2");
+						$client['queued_messages'][] = $secret_question['message'];
+						$client['question'] = "enter-password-2";
+						$client['create']['password'] = $cmd;
+					break;
+					case "enter-password-2":
+						if( $cmd === $cleint['create']['password'] ) {
+							$question = $questions->byId("enter-email");
+							$client['queued_messages'][] = $question['message'];
+							$client['question'] = "enter-email";
+						}
+						else {
+							$client['queued_messages'][] = "Sorry, those secret phrases do not match.  Please re-enter.\r\n";
+							$question = $questions->byId("enter-password-1");
+							$client['queued_messages'][] = $question['message'];
+							$client['question'] = "enter-password-1";
+							unset($client['create']['password']);
+						}
+					break;
+					case "enter-email":
+						if( ($cmd = filter_var($cmd, FILTER_VALIDATE_EMAIL)) !== false ) {
+							$u = User::create(
+								$client['create']['username'], 
+								$client['create']['class'], 
+								$client['create']['race'], 
+								[
+									'strength'=>7,
+									'constitution'=>7,
+									'dexerity'=>7,
+									'wisdom'=>7, 
+									'charisma'=>7,
+									'intelligence'=>7
+								], 
+								$client['create']['password'], $cmd
+							);
+							$u->save();
+							$client['user'] = $u;
+							$client['state'] = "playing";
+						}
+						else {
+							$client['queued_messages'][] = "That do not appear to be a valid email address.  Please re-enter.\r\n";
+							$question = $questions->byId("enter-email");
+							$client['queued_messages'][] = $question['message'];
+							$client['question'] = "enter-email";
+						}
+					break;
+					case "authenticate-user": // password test
+						if( $client['potential_user']->authenticate($cmd) ) {
+							$client['state'] = 'playing';
+							$client['user'] = $client['potential_user'];
+							unset($client['potential_user']);
+							echo "User $cmd logged in\n";
+							$client['queued_messages'][] = "WELCOME {$client['user']->name()}\r\n\r\n";		
+						}
+						else {
+							$client['queued_messages'][] = "Sorry, the secret phrase was incorrect.\r\n\r\n";
+							$question = $questions->byId("login-prompt");
+							$client['queued_messages'][] = $question['message'];
+							$client['question'] = "login-prompt";
+						}
+					break;
+					default: 
+						echo "questino did not have an ID\n";
+				}
+			}			
+			/*
 			if( $client['state'] == 'login' ) {
 				if( strtoupper($cmd) == 'TEST' ) {
 					$client['state'] = 'playing';
+					$client['question'] = ['message'=>'', 'default'=>'', 'id'=>0];
 					$client['username'] = $cmd;
 					$client['prompt'] = '< 0hp 0mn 0mv > ';
 					echo "User $cmd logged in\n";
 					$client['queued_messages'][] = "WELCOME $cmd\r\n\r\n";
 				}
 				else {
-					$client['queued_messages'][] = "That name does not exist in my database\r\n";
-					$client['queued_messages'][] = "What is thy name? ";
 				}
 			}
 			else {
@@ -169,8 +294,11 @@ while(true) {
 						break;
 				}
 			}
-			
-			$client['queued_messages'][] = $client['prompt'];
+			*/
+
+			if( isset($client['user']) ) {
+				$client['queued_messages'][] = $client['user']->prompt();
+			}
 		}
 	}
 	
@@ -184,10 +312,11 @@ while(true) {
 	$en = microtime(true);
 	
 	if( $en - $timer > 15 ) {
-		echo "[] There are " . number_format(count($clients) - 1, 0) . " client(s) connected\n";
+		echo "[SERVER] There are " . number_format(count($clients) - 1, 0) . " client(s) connected\n";
 		$timer = $en;
 	}
 	
+	echo json_encode($client_meta) . "\n\n";
 	//sleep(2);
 }
 

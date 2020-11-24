@@ -1,0 +1,50 @@
+{
+    "login-prompt": {
+        "maximum": 20,
+        "minimum": 7,
+        "answer_type": "string",
+        "message": "What is thy name? "
+    },
+    "start-registration": {
+        "answer": "y",
+        "case-insensitive": true,
+        "answer_type": "string",
+        "message": "Wouldst thou desire to write that name in the Royal Register? "
+    },
+    "select-race": {
+        "answer": [
+            "human",
+            "drow",
+            "orc",
+            "dwarf"
+        ],
+        "answer_type": "choice",
+        "message": "What be thy race? "
+    },
+    "select-class": {
+        "answer": [
+            "cleric",
+            "mage",
+            "warrior"
+        ],
+        "answer_type": "choice",
+        "message": "What class shalt thou choose? "
+    },
+    "enter-email": {
+        "answer-type": "string",
+        "message": "Please enter your email address: "
+    },
+    "login-password": {
+        "answer-type": "string",
+        "message": "Giveth now the secret phrase: "
+    },
+    "enter-password-1": {
+        "answer-type": "string",
+        "message": "What is thy secret phrase (password)? "
+    },
+    "enter-password-2": {
+        "answer-type": "string",
+        "message": "Giveth now the secret phrase (again): "
+    }
+
+}
