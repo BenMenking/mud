@@ -1,0 +1,10 @@
+World: Tikal
+
+Room: Grand Lobby
+Id: grand_lobby
+Spawn: true
+Description: You find yourself in a large ornate lobby.  The small windows at the top of the high ceiling let in the perfect amount of light.
+Exits:
+Ambiance: indoor
+
+
