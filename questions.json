@@ -34,7 +34,7 @@
         "answer-type": "string",
         "message": "Please enter your email address: "
     },
-    "login-password": {
+    "authenticate-user": {
         "answer-type": "string",
         "message": "Giveth now the secret phrase: "
     },

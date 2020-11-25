@@ -42,6 +42,7 @@ $started = microtime(true);
 $timer = microtime(true);
 
 $questions = new Questions();
+$world = new World($_ENV['SERVER_WORLD']);
 
 // game loop
 while(true) {
@@ -172,9 +173,9 @@ while(true) {
 						try {
 							$user = User::load($cmd);
 							$client['potential_user'] = $user;
-							$secret_question = $questions->byId(1006);
+							$secret_question = $questions->byId("authenticate-user");
 							$client['queued_messages'][] = $secret_question['message'];
-							$client['question'] = 1006;
+							$client['question'] = "authenticate-user";
 						}
 						catch(Exception $e) {
 							//$client['queued_messages'][] = "That name has not been recorded in the Royal Register!\r\n\r\n";
@@ -210,7 +211,7 @@ while(true) {
 						$client['create']['password'] = $cmd;
 					break;
 					case "enter-password-2":
-						if( $cmd === $cleint['create']['password'] ) {
+						if( $cmd === $client['create']['password'] ) {
 							$question = $questions->byId("enter-email");
 							$client['queued_messages'][] = $question['message'];
 							$client['question'] = "enter-email";
@@ -237,7 +238,7 @@ while(true) {
 									'charisma'=>7,
 									'intelligence'=>7
 								], 
-								$client['create']['password'], $cmd
+								$client['create']['password'], $cmd, $world->getSpawn()
 							);
 							$u->save();
 							$client['user'] = $u;
@@ -268,33 +269,26 @@ while(true) {
 					default: 
 						echo "questino did not have an ID\n";
 				}
-			}			
-			/*
-			if( $client['state'] == 'login' ) {
-				if( strtoupper($cmd) == 'TEST' ) {
-					$client['state'] = 'playing';
-					$client['question'] = ['message'=>'', 'default'=>'', 'id'=>0];
-					$client['username'] = $cmd;
-					$client['prompt'] = '< 0hp 0mn 0mv > ';
-					echo "User $cmd logged in\n";
-					$client['queued_messages'][] = "WELCOME $cmd\r\n\r\n";
-				}
-				else {
-				}
-			}
-			else {
-				switch($cmd) {
+			}	
+			else if( $client['state'] == 'playing') {
+				$cmds = explode_ex(' ', $cmd);
+
+				switch($cmds[0]) {
 					case 'quit':
+					case 'q':
 						socket_close($socket);
 						$dispose[] = $id;
-						echo "client {$client['peername']} requested to quit\n";
-						break;
+						echo "[{$client['peername']}] Requesting to quit\n";
+					break;
+					case 'look':
+					case 'l':
+						$client['user']->
+					break;
 					default:
-						$client['queued_messages'][] = "Sorry, I don't know how to '$cmd'\r\n";
-						break;
+						echo "Command not found: $cmd\n";
+						$client['queued_messages'][] = "Sorry, command '$cmd' not recognized\r\n";
 				}
-			}
-			*/
+			}		
 
 			if( isset($client['user']) ) {
 				$client['queued_messages'][] = $client['user']->prompt();
@@ -379,5 +373,26 @@ function hex_dump($data, $newline="\n")
     echo sprintf('%6X',$offset).' : '.implode(' ', str_split($line,2)) . ' [' . $chars[$i] . ']' . $newline;
     $offset += $width;
   }
+}
+
+function explode_ex($delimiter, $str) {
+	$parts = [];
+	$part = '';
+
+	for($i = 0; $i < strlen($str); $i++) {
+		if( $str[$i] == $delimiter && strlen($part) > 0 ) {
+			$parts[] = $part;
+			$part = '';
+		}
+		else {
+			$part .= $str[$i];
+		}		
+	}
+
+	if( strlen($part) > 0 ) {
+		$parts[] = $part;
+	}
+
+	return $parts;
 }
 ?>

@@ -15,11 +15,15 @@ class User {
         return array_shift($this->messages);
     }
 
+    public function room() {
+
+    }
+
     public static function load($name) {
         $file = "users/" . User::pathify($name) . ".json";
 
         if( file_exists($file) ) {
-            $instance = new _self();
+            $instance = new self();
 
             $instance->meta = json_decode(file_get_contents($file), true);
             $instance->userfile = $file;
@@ -45,8 +49,8 @@ class User {
         }
     }
 
-    public static function create($name, $class, $race, $attributes, $password, $email_address) {
-        $instance = new _self();
+    public static function create($name, $class, $race, $attributes, $password, $email_address, $starting_room) {
+        $instance = new self();
 
         $file = "users/" . User::pathify($name) . ".json";
         $instance->meta['name'] = $name;
@@ -62,13 +66,14 @@ class User {
         $instance->meta['temperature'] = 96.7; // in farenheit
         $instance->meta['alignment'] = 0;
         $instance->meta['wearables'] = [];
-        $instance->meta['room'] = 0;
+        $instance->meta['room'] = $starting_room;
         $instance->meta['wallet'] = 100; // starting coins
         $instance->meta['carrying'] = [];
         $instance->meta['weight'] = 175; // in pounds
         $instance->meta['o2'] = 99; // blood's oxygen level
-        $instance->meta['password'] = password_hash($password);
+        $instance->meta['password'] = password_hash($password, PASSWORD_DEFAULT);
         $instance->meta['email'] = $email_address;
+        $instance->userfile = $file;
 
         $instance->save();
 

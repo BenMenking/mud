@@ -5,14 +5,21 @@ class World {
     private $rooms = [], $spawn_id;
 
     public function __construct($name) {
-        $this->world = json_decode(file_get_contents('worlds/' . strtolower($_ENV['DEFAULT_WORLD']) . '.json'), true);
+        $file = 'worlds/' . strtolower($name) . '.json';
 
-        foreach($this->world['rooms'] as $room) {
-            $rooms[$room['id']] = Room::load($data);
+        if( file_exists($file) ) {
+            $this->world = json_decode(file_get_contents($file), true);
 
-            if( isset($room['spawn']) && $room['spawn'] ) {
-                $this->spawn_id = $room['id'];
+            foreach($this->world['rooms'] as $room) {
+                $rooms[$room['id']] = Room::load($room);
+
+                if( isset($room['spawn']) && $room['spawn'] ) {
+                    $this->spawn_id = $room['id'];
+                }
             }
+        }
+        else {
+            throw new Exception("World not found.");
         }
     }
 
@@ -29,7 +36,7 @@ class Room {
     private $room;
 
     public static function load($data) {
-        $room = new _self();
+        $room = new self();
 
         $room->room = $data;
 
