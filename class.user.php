@@ -2,21 +2,13 @@
 
 class User {
     // volatile variables that do not get permanently recorded
-    public $state, $authenticated = false, $messages = [];
+    public $state, $authenticated = false, $messages = [], $room;
 
     // non-volatile variables that get saved to user record
     protected $meta, $userfile;
 
-    public function queue($message) {
-        $this->messages[] = $message;
-    }
-
-    public function unqueue() {
-        return array_shift($this->messages);
-    }
-
-    public function room() {
-
+    public function performAction(Command $command) {
+        return $this->state->perform($command);
     }
 
     public static function load($name) {
@@ -27,6 +19,7 @@ class User {
 
             $instance->meta = json_decode(file_get_contents($file), true);
             $instance->userfile = $file;
+            $instance->state = new StandingState();
 
             return $instance;
         }
@@ -35,8 +28,12 @@ class User {
         }
     }
 
+    public function setRoom(Room $room) {
+        $this->room = $room;
+    }
+
     public function save() {
-        return file_put_contents($this->userfile, json_encode($this->meta));
+        return file_put_contents($this->userfile, json_encode($this->meta, JSON_PRETTY_PRINT));
     }
 
     public function authenticate($password) {
@@ -59,8 +56,11 @@ class User {
         $instance->meta['attributes'] = $attributes;
         $instance->meta['skill_points'] = 0;
         $instance->meta['health'] = 100; // 0-100 (but modifiers could take above 100)
+        $instance->meta['total_health'] = 100;
         $instance->meta['mana'] = 0;
+        $instance->meta['total_mana'] = 0;
         $instance->meta['movement'] = 25;
+        $instance->meta['total_movement'] = 25;
         $instance->meta['hunger'] = 0; // 0-5 with 0 no hunger, 3 hungry, 5 starving
         $instance->meta['thirst'] = 0; // 0-5 with 0 no thirst, 3 parched, 5 dehydrated
         $instance->meta['temperature'] = 96.7; // in farenheit
@@ -73,6 +73,10 @@ class User {
         $instance->meta['o2'] = 99; // blood's oxygen level
         $instance->meta['password'] = password_hash($password, PASSWORD_DEFAULT);
         $instance->meta['email'] = $email_address;
+        $instance->meta['created'] = time();
+        $instance->meta['last_login'] = time();
+
+        $instance->state = new StandingState();
         $instance->userfile = $file;
 
         $instance->save();
@@ -85,9 +89,13 @@ class User {
     public function race() { return $this->meta['race']; }
 
     public function base() { return $this->meta['attributes']; }
+    public function room() { return $this->meta['room']; }
 
     public function prompt() {
-        return "< " . $this->meta['health'] . "hp " . $this->meta['movement'] . "mv " . $this->meta['mana'] . "mn > ";
+        return "<H:{$this->meta['health']}/{$this->meta['total_health']} "
+            . "M:{$this->meta['mana']}/{$this->meta['total_mana']} "
+            . "MV:{$this->meta['movement']}/{$this->meta['total_movement']} "
+            . "G:{$this->meta['wallet']}> ";
     }
 
     private static function pathify($file) {
@@ -100,5 +108,59 @@ class User {
         $file = mb_ereg_replace("([^\w\s\d\-_~,;\[\]\(\).])", '', strtolower($file));
         // Remove any runs of periods (thanks falstro!)
         return mb_ereg_replace("([\.]{2,})", '', $file);        
+    }
+
+
+}
+
+class UserStates {
+    public function perform(Command $command) { }
+}
+
+class StandingState extends UserStates {
+    public function perform(Command $command) {
+        parent::perform($command);
+
+        switch(true) {
+            case $command instanceof LookCommand:
+                return $command->perform();
+            break;
+        }
+    }
+}
+
+class RestingState extends UserStates {
+    public function perform(Command $command) {
+        parent::perform($command);
+
+        switch(true) {
+            case $command instanceof LookCommand:
+                return $command->perform();
+            break;
+        }
+    }
+}
+
+class SleepingState extends UserStates {
+    public function perform(Command $command) {
+        parent::perform($command);
+
+        switch(true) {
+            case $command instanceof LookCommand:
+                return "You cannot look while sleeping!";
+            break;
+        }
+    }
+}
+
+class IncapacitatedState extends UserStates {
+    public function perform(Command $command) {
+        parent::perform($command);
+
+        switch(true) {
+            case $command instanceof LookCommand:
+                $command->perform();
+            break;
+        }
     }
 }

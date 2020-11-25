@@ -6,9 +6,7 @@ require_once('vendor/autoload.php');
 
 // this contains all of our TELNET protcol related stuff
 require_once('telnet.inc.php');
-require_once('class.world.php');
-require_once('class.user.php');
-require_once('class.questions.php');
+require_once('class.mudserver.php');
 
 // load our .env file into $_ENV
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -17,7 +15,7 @@ $dotenv->load();
 // create the socket we will be using
 $server_sock = socket_create(AF_INET, SOCK_STREAM, 0);
 
-echo "Server initializing... ";
+echo "[SERVER] initializing... ";
 
 // problems, bail out
 if( !$server_sock ) { die("Could not create socket\n"); }
@@ -255,8 +253,11 @@ while(true) {
 						if( $client['potential_user']->authenticate($cmd) ) {
 							$client['state'] = 'playing';
 							$client['user'] = $client['potential_user'];
+							$client['user']->setRoom($world->getSpawn());
+							$client['input'] = new InputHandler($client['user'], $world);
 							unset($client['potential_user']);
-							echo "User $cmd logged in\n";
+							unset($client['question']);
+							echo "[{$client['peername']}] User {$client['user']->name()} logged in\n";
 							$client['queued_messages'][] = "WELCOME {$client['user']->name()}\r\n\r\n";		
 						}
 						else {
@@ -267,26 +268,33 @@ while(true) {
 						}
 					break;
 					default: 
-						echo "questino did not have an ID\n";
+						echo "[{$client['peername']}] Question did not have an ID\n";
 				}
 			}	
 			else if( $client['state'] == 'playing') {
-				$cmds = explode_ex(' ', $cmd);
+				if( isset($client['question']) ) {
+					echo "[SERVER] We asked a questino but have not implemented this yet\n";
+				}
+				else {
+					$action = $client['input']->execute($cmd);
 
-				switch($cmds[0]) {
-					case 'quit':
-					case 'q':
-						socket_close($socket);
-						$dispose[] = $id;
-						echo "[{$client['peername']}] Requesting to quit\n";
-					break;
-					case 'look':
-					case 'l':
-						$client['user']->
-					break;
-					default:
-						echo "Command not found: $cmd\n";
-						$client['queued_messages'][] = "Sorry, command '$cmd' not recognized\r\n";
+					echo "[SERVER] Got action with instance of " . get_class($action) . "\n";
+
+					switch(true) {
+						case $action instanceof QuitCommand:
+							socket_close($socket);
+							$dispose[] = $id;
+							echo "[{$client['peername']}] Requesting to quit\n";
+						break;
+						case $action instanceof LookCommand:
+							$msg = $client['user']->performAction($action);
+							echo "[SERVER] performed action " . get_class($action) . " on user and got '" . $msg . "'\n";
+							$client['queued_messages'][] = $msg;
+						break;
+						default:
+							echo "[{$client['peername']}] Command not found: {$action->cmds[0]}\n";
+							$client['queued_messages'][] = "Sorry, command '{$action->cmds[0]}' not recognized\r\n";	
+					}
 				}
 			}		
 
@@ -310,7 +318,7 @@ while(true) {
 		$timer = $en;
 	}
 	
-	echo json_encode($client_meta) . "\n\n";
+	//echo json_encode($client_meta) . "\n\n";
 	//sleep(2);
 }
 
@@ -375,24 +383,4 @@ function hex_dump($data, $newline="\n")
   }
 }
 
-function explode_ex($delimiter, $str) {
-	$parts = [];
-	$part = '';
-
-	for($i = 0; $i < strlen($str); $i++) {
-		if( $str[$i] == $delimiter && strlen($part) > 0 ) {
-			$parts[] = $part;
-			$part = '';
-		}
-		else {
-			$part .= $str[$i];
-		}		
-	}
-
-	if( strlen($part) > 0 ) {
-		$parts[] = $part;
-	}
-
-	return $parts;
-}
 ?>

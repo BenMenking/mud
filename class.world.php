@@ -10,11 +10,11 @@ class World {
         if( file_exists($file) ) {
             $this->world = json_decode(file_get_contents($file), true);
 
-            foreach($this->world['rooms'] as $room) {
-                $rooms[$room['id']] = Room::load($room);
+            foreach($this->world['rooms'] as $id=>$room) {
+                $this->rooms[$id] = Room::load($room, $id);
 
                 if( isset($room['spawn']) && $room['spawn'] ) {
-                    $this->spawn_id = $room['id'];
+                    $this->spawn_id = $id;
                 }
             }
         }
@@ -33,21 +33,28 @@ class World {
 }
 
 class Room {
-    private $room;
+    private $data;
 
-    public static function load($data) {
+    public static function load($data, $id) {
         $room = new self();
 
-        $room->room = $data;
+        $room->data = $data;
+        $room->data['id'] = $id;
 
         return $room;
     }
 
-    public function getTemperature() { $this->room['temperature']; }
-    public function isSpawn() { return isset($this->room['spawn']); }
-    public function exits() { return $this->room['exits']; }
-    public function oxy_level() { return $this->room['oxygen_level']; }
-    public function ambiance() { return $this->room['ambiance']; }
+    public function id() { return $this->data['id']; }
+    public function description() { return $this->data['description']; }
+    public function temperature() { return $this->data['temperature']; }
+    public function isSpawn() { return isset($this->data['spawn']); }
+    public function exits() { return implode(' ', array_keys($this->data['exits'])); }
+    public function oxy_level() { return $this->data['oxygen_level']; }
+    public function ambiance() { return $this->data['ambiance']; }
+    public function lightLevel() { return $this->data['light_level']; }
+    public function name() { return $this->data['room-name']; }
 
-
+    public function __toString() {
+        return json_encode($this->data, JSON_PRETTY_PRINT);
+    }
 }
