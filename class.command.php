@@ -1,7 +1,31 @@
 <?php
 
+class HelpCommand extends Command {
+
+}
+
+class CommCommand extends Command {
+
+}
+
 class UnknownCommand extends Command {
 
+}
+
+class ExitsCommand extends Command {
+    public function perform() {
+        parent::perform();
+
+        return "Exits: " . $this->user->room->exits() . "\r\n";
+    }
+}
+
+class WhoCommand extends Command {
+    public function perform() {
+        parent::perform();
+
+        return "Not implemented\r\n";
+    }
 }
 
 class LookCommand extends Command {
@@ -16,7 +40,23 @@ class MoveCommand extends Command {
     public function perform() {
         parent::perform();
 
-        return "You can't do that right now\r\n";
+        $exits = explode(',', $this->user->room->exits(','));
+
+        if( in_array($this->cmds[0], $exits) ) {
+            $room = $this->user->room->getWorld()->traverse($this->user->room, $this->cmds[0]);
+            
+            if( is_null($room) ) {
+                return "You cannot go that direction\r\n";
+            }
+            else {
+                $this->user->setRoom($room);
+                return $this->user->room->name() . "\r\n" . $this->user->room->description()
+                    . "\r\n[Exits: " . $this->user->room->exits() . "]\r\n\r\n";
+            }
+        }
+        else {
+            return "You cannot go that way\r\n";
+        }
     }
 }
 
@@ -35,6 +75,14 @@ class Command {
 
     public function perform() { 
         return null;
+    }
+
+    public function argc() {
+        return count($this->cmds);
+    }
+
+    public function argv($index) {
+        return isset($this->cmds[$index])?$this->cmds[$index]:null;
     }
 }
 
@@ -64,6 +112,87 @@ class InputHandler {
             case 'look':
             case 'l':
                 return $this->constructCommand("LookCommand", $cmds);
+            break;
+            case 'north':
+            case 'n':
+            case 'south':
+            case 's':
+            case 'east':
+            case 'e':
+            case 'west':
+            case 'w':
+            case 'up':
+            case 'u':
+            case 'down':
+            case 'd':
+                return $this->constructCommand("MoveCommand", $cmds);
+            break;
+            case 'who':
+                return $this->constructCommand("WhoCommand", $cmds);
+            break;
+            case 'help':
+                return $this->constructCommand("HelpCommand", $cmds);
+            break;
+            case 'say':
+            case 'shout':
+            case 'gossip':
+            case 'tell':
+                return $this->constructCommand("CommCommand", $cmds);
+            break;
+            case 'inventory':
+            case 'i':
+                return $this->constructCommand("InventoryCommand", $cmds);
+            break;
+            case 'equipment':
+            case 'eq':
+                return $this->constructCommand("EquipmentCommand", $cmds);
+            break;
+            case 'get':
+            case 'drop':
+            case 'wear':
+            case 'remove':
+            case 'wield':
+            case 'hold':
+                return $this->constructCommand("ActionCommand", $cmds);
+            break;
+            case 'score':
+                return $this->constructCommand("ScoreCommand", $cmds);
+            break;
+            case 'sleep':
+            case 'rest':
+            case 'wake':
+            case 'stand':
+                return $this->constructCommand("StateCommand", $cmds);
+            break;
+            case 'consider':
+            case 'con':
+                return $this->constructCommand("AssessCommand", $cmds);
+            break;
+            case 'kill':
+                return $this->constructCommand("AttackCommand", $cmds);
+            break;
+            case 'assist':
+                return $this->constructCommand("AssistCommand", $cmds);
+            break;
+            case 'flee':
+                return $this->constructCommand("FleeCommand", $cmds);
+            break;
+            case 'cast':
+                return $this->constructCommand("CastCommand", $cmds);
+            break;
+            case 'rent':
+                return $this->constructCommand("RentCommand", $cmds);
+            break;
+            case 'eat':
+            case 'drink':
+            case 'quaff':
+                return $this->constructCommand("DrinkCommand", $cmds);
+            break;
+            case 'time':
+                return $this->constructCommand("ServerCommand", $cmds);
+            break;
+            case 'aff':
+                return $this->constructCommand("AffectsCommand", $cmds);
             break;
             default:
                 return $this->constructCommand("UnknownCommand", $cmds);

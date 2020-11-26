@@ -287,13 +287,12 @@ while(true) {
 							echo "[{$client['peername']}] Requesting to quit\n";
 						break;
 						case $action instanceof LookCommand:
-							$msg = $client['user']->performAction($action);
-							echo "[SERVER] performed action " . get_class($action) . " on user and got '" . $msg . "'\n";
-							$client['queued_messages'][] = $msg;
+						case $action instanceof MoveCommand:
+							$client['queued_messages'][] = $client['user']->performAction($action);
 						break;
 						default:
-							echo "[{$client['peername']}] Command not found: {$action->cmds[0]}\n";
-							$client['queued_messages'][] = "Sorry, command '{$action->cmds[0]}' not recognized\r\n";	
+							echo "[{$client['peername']}] Command not found: {$action->argv(0)}\n";
+							$client['queued_messages'][] = "Sorry, command '{$action->argv(0)}' not recognized\r\n";	
 					}
 				}
 			}		

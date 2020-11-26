@@ -123,8 +123,11 @@ class StandingState extends UserStates {
 
         switch(true) {
             case $command instanceof LookCommand:
+            case $command instanceof MoveCommand:
                 return $command->perform();
             break;
+            default:
+                return "You cannot perform that action while standing\r\n";
         }
     }
 }
@@ -137,6 +140,8 @@ class RestingState extends UserStates {
             case $command instanceof LookCommand:
                 return $command->perform();
             break;
+            default:
+                return "You cannot perform that action while resting\r\n";
         }
     }
 }
@@ -146,9 +151,8 @@ class SleepingState extends UserStates {
         parent::perform($command);
 
         switch(true) {
-            case $command instanceof LookCommand:
-                return "You cannot look while sleeping!";
-            break;
+            default:
+                return "You cannot perform that action while sleeping\r\n";
         }
     }
 }
@@ -161,6 +165,8 @@ class IncapacitatedState extends UserStates {
             case $command instanceof LookCommand:
                 $command->perform();
             break;
+            default:
+                return "You cannot perform that action while incapacitated\r\n";
         }
     }
 }
