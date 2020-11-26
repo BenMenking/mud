@@ -64,6 +64,16 @@ class QuitCommand extends Command {
     // it tis what it is
 }
 
+class WhoCommand extends Command {
+    //get list of players online
+}
+
+class KillCommand extends Command {
+    //starts the combat loop
+}
+
+
+
 class Command {
     protected $user, $world, $cmds;
 
