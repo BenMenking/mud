@@ -3,6 +3,7 @@
 class World {
     private $world;
     private $rooms = [], $spawn_id;
+    private $players = [];
 
     public function __construct($name) {
         $file = 'worlds/' . strtolower($name) . '.json';
@@ -23,6 +24,26 @@ class World {
         }
     }
     
+    public function addPlayer(Player $player) {
+        if( !in_array($player, $this->players) ) {
+            $this->players[] = $player;
+        }
+    }
+
+    public function countPlayers($includeAdmins = true, $includeMortals = true) {
+        return count($this->players);
+    }
+
+    public function getPlayers($includeAdmins = true, $includeMortals = true) {
+        return $this->players;
+    }
+
+    public function removePlayer(Player $player) {
+        if( $key = array_search($player, $this->players) ) {
+            unset($this->players[$key]);
+        }
+    }
+
     public function traverse(Room $fromRoom, $direction) {
         if( $id = $fromRoom->hasExit($direction) ) {
             return $this->getRoom($id);

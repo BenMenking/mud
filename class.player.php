@@ -1,11 +1,13 @@
 <?php
 
-class User {
+use Ramsey\Uuid\Uuid;
+
+class Player {
     // volatile variables that do not get permanently recorded
     public $state, $authenticated = false, $messages = [], $room;
 
     // non-volatile variables that get saved to user record
-    protected $meta, $userfile;
+    protected $meta, $playerfile;
 
     public function performAction(Command $command) {
         return $this->state->perform($command);
@@ -18,7 +20,7 @@ class User {
             $instance = new self();
 
             $instance->meta = json_decode(file_get_contents($file), true);
-            $instance->userfile = $file;
+            $instance->playerfile = $file;
             $instance->state = new StandingState();
 
             return $instance;
@@ -33,7 +35,7 @@ class User {
     }
 
     public function save() {
-        return file_put_contents($this->userfile, json_encode($this->meta, JSON_PRETTY_PRINT));
+        return file_put_contents($this->playerfile, json_encode($this->meta, JSON_PRETTY_PRINT));
     }
 
     public function authenticate($password) {
@@ -51,7 +53,6 @@ class User {
 
         $file = "users/" . User::pathify($name) . ".json";
         $instance->meta['name'] = $name;
-        $instance->meta['class'] = 'cleric';
         $instance->meta['race'] = 'human';
         $instance->meta['attributes'] = $attributes;
         $instance->meta['skill_points'] = 0;
@@ -76,8 +77,10 @@ class User {
         $instance->meta['created'] = time();
         $instance->meta['last_login'] = time();
 
+        $instance->meta['uuid'] = Uuid::uuid5(Uuid::NAMESPACE_X500, json_encode($instance->meta))->toString();
+
         $instance->state = new StandingState();
-        $instance->userfile = $file;
+        $instance->playerfile = $file;
 
         $instance->save();
 
@@ -113,11 +116,11 @@ class User {
 
 }
 
-class UserStates {
+class PlayerStates {
     public function perform(Command $command) { }
 }
 
-class StandingState extends UserStates {
+class StandingState extends PlayerStates {
     public function perform(Command $command) {
         parent::perform($command);
 
@@ -132,7 +135,7 @@ class StandingState extends UserStates {
     }
 }
 
-class RestingState extends UserStates {
+class RestingState extends PlayerStates {
     public function perform(Command $command) {
         parent::perform($command);
 
@@ -146,7 +149,7 @@ class RestingState extends UserStates {
     }
 }
 
-class SleepingState extends UserStates {
+class SleepingState extends PlayerStates {
     public function perform(Command $command) {
         parent::perform($command);
 
@@ -157,7 +160,7 @@ class SleepingState extends UserStates {
     }
 }
 
-class IncapacitatedState extends UserStates {
+class IncapacitatedState extends PlayerStates {
     public function perform(Command $command) {
         parent::perform($command);
 

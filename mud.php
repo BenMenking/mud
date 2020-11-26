@@ -164,13 +164,13 @@ while(true) {
 		if( !empty($client['queued_commands']) ) {
 			$cmd = array_shift($client['queued_commands']);
 	
-			if( $client['state'] == 'new' ) {  // socket just setup and we don't have a User attached to this client
+			if( $client['state'] == 'new' ) {  // socket just setup and we don't have a Player attached to this client
 				switch($client['question']) {
 					case "login-prompt":
-						// see if user exists
+						// see if player exists
 						try {
-							$user = User::load($cmd);
-							$client['potential_user'] = $user;
+							$player = Player::load($cmd);
+							$client['potential_player'] = $player;
 							$secret_question = $questions->byId("authenticate-user");
 							$client['queued_messages'][] = $secret_question['message'];
 							$client['question'] = "authenticate-user";
@@ -224,7 +224,7 @@ while(true) {
 					break;
 					case "enter-email":
 						if( ($cmd = filter_var($cmd, FILTER_VALIDATE_EMAIL)) !== false ) {
-							$u = User::create(
+							$u = Player::create(
 								$client['create']['username'], 
 								$client['create']['class'], 
 								$client['create']['race'], 
@@ -239,7 +239,7 @@ while(true) {
 								$client['create']['password'], $cmd, $world->getSpawn()
 							);
 							$u->save();
-							$client['user'] = $u;
+							$client['player'] = $u;
 							$client['state'] = "playing";
 						}
 						else {
@@ -250,15 +250,15 @@ while(true) {
 						}
 					break;
 					case "authenticate-user": // password test
-						if( $client['potential_user']->authenticate($cmd) ) {
+						if( $client['potential_player']->authenticate($cmd) ) {
 							$client['state'] = 'playing';
-							$client['user'] = $client['potential_user'];
-							$client['user']->setRoom($world->getSpawn());
-							$client['input'] = new InputHandler($client['user'], $world);
-							unset($client['potential_user']);
+							$client['player'] = $client['potential_player'];
+							$client['player']->setRoom($world->getSpawn());
+							$client['input'] = new InputHandler($client['player'], $world);
+							unset($client['potential_player']);
 							unset($client['question']);
-							echo "[{$client['peername']}] User {$client['user']->name()} logged in\n";
-							$client['queued_messages'][] = "WELCOME {$client['user']->name()}\r\n\r\n";		
+							echo "[{$client['peername']}] Player {$client['player']->name()} logged in\n";
+							$client['queued_messages'][] = "WELCOME {$client['player']->name()}\r\n\r\n";		
 						}
 						else {
 							$client['queued_messages'][] = "Sorry, the secret phrase was incorrect.\r\n\r\n";
@@ -288,7 +288,7 @@ while(true) {
 						break;
 						case $action instanceof LookCommand:
 						case $action instanceof MoveCommand:
-							$client['queued_messages'][] = $client['user']->performAction($action);
+							$client['queued_messages'][] = $client['player']->performAction($action);
 						break;
 						default:
 							echo "[{$client['peername']}] Command not found: {$action->argv(0)}\n";
@@ -297,8 +297,8 @@ while(true) {
 				}
 			}		
 
-			if( isset($client['user']) ) {
-				$client['queued_messages'][] = $client['user']->prompt();
+			if( isset($client['player']) ) {
+				$client['queued_messages'][] = $client['player']->prompt();
 			}
 		}
 	}

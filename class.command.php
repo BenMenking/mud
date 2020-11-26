@@ -64,6 +64,12 @@ class QuitCommand extends Command {
     // it tis what it is
 }
 
+class KillCommand extends Command {
+    //starts the combat loop
+}
+
+
+
 class Command {
     protected $user, $world, $cmds;
 
