@@ -237,6 +237,7 @@ while(true) {
 							$client['player'] = $u;
 							$client['player']->setRoom($world->getSpawn());
 							$client['input'] = new InputHandler($client['player'], $world);
+							$world->addPlayer($client['player']);
 							unset($client['question']);
 						}
 						else {
@@ -252,6 +253,8 @@ while(true) {
 							$client['player'] = $client['potential_player'];
 							$client['player']->setRoom($world->getSpawn());
 							$client['input'] = new InputHandler($client['player'], $world);
+							$world->addPlayer($client['player']);
+
 							unset($client['potential_player']);
 							unset($client['question']);
 							echo "[{$client['peername']}] Player {$client['player']->name()} logged in\n";
@@ -303,14 +306,18 @@ while(true) {
 	// remove any clients that 'quit'
 	foreach($dispose as $id) {
 		unset($client_meta[$id]);
-        $key = array_search($read_sock, $clients);
+		$key = array_search($read_sock, $clients);
+
+		$world->removePlayer($clients[$key]['player']);
+		$clients[$key]['player']->save();
+		
         unset($clients[$key]);
 	}
 	
 	$en = microtime(true);
 	
 	if( $en - $timer > 15 ) {
-		echo "[SERVER] There are " . number_format(count($clients) - 1, 0) . " client(s) connected\n";
+		echo "[SERVER] There are " . number_format($world->countPlayers(), 0) . " client(s) connected\n";
 		$timer = $en;
 	}
 	

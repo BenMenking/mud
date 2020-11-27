@@ -101,6 +101,10 @@ class Player {
             . "G:{$this->meta['wallet']}> ";
     }
 
+    public function __toString() {
+        return $this->meta['uuid'];
+    }
+
     private static function pathify($file) {
         /** https://stackoverflow.com/a/2021729/4508285 */
         // Remove anything which isn't a word, whitespace, number
