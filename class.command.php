@@ -24,7 +24,11 @@ class WhoCommand extends Command {
     public function perform() {
         parent::perform();
 
-        return "Not implemented\r\n";
+        $players = $this->world->getPlayers();
+
+        return "-----------------------------------------------\r\n"
+            . implode("\r\n", $players) . "\r\n"
+            . "-----------------------------------------------\r\n";
     }
 }
 

@@ -288,6 +288,7 @@ while(true) {
 						break;
 						case $action instanceof LookCommand:
 						case $action instanceof MoveCommand:
+						case $action instanceof WhoCommand:
 							$client['queued_messages'][] = $client['player']->performAction($action);
 						break;
 						default:
