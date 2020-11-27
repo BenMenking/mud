@@ -36,7 +36,9 @@ class LookCommand extends Command {
     public function perform() {
         parent::perform();
 
-        return $this->player->room->name() . "\r\n" . $this->player->room->description() . "\r\n[Exits: " . $this->player->room->exits() . "]\r\n\r\n";
+        return Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room->name() . Terminal::RESET . "\r\n" 
+            . $this->player->room->description() . "\r\n" . Terminal::LIGHT_CYAN . "[Exits: " 
+            . $this->player->room->exits() . "]\r\n\r\n" . Terminal::RESET;
     }
 }
 

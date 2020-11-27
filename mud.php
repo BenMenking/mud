@@ -258,7 +258,8 @@ while(true) {
 							unset($client['potential_player']);
 							unset($client['question']);
 							echo "[{$client['peername']}] Player {$client['player']->name()} logged in\n";
-							$client['queued_messages'][] = "WELCOME {$client['player']->name()}\r\n\r\n";		
+							$client['queued_messages'][] = Terminal::BOLD . Terminal::LIGHT_WHITE 
+								. "WELCOME {$client['player']->name()}\r\n\r\n" . Terminal::RESET;		
 						}
 						else {
 							$client['queued_messages'][] = "Sorry, the secret phrase was incorrect.\r\n\r\n";
