@@ -5,7 +5,27 @@ class HelpCommand extends Command {
 }
 
 class CommCommand extends Command {
+    public function perform() {
+        parent::perform();
 
+        switch($this->cmds[0]) {
+            case 'shout':
+            case 'gossip':
+                $cmds = $this->cmds;
+                array_shift($cmds);
+
+                foreach($this->world->getPlayers() as $player) {
+                    
+                }
+                return "{$this->player->name()} shouts '" . implode(' ', $cmds) . "'\r\n";
+            break;
+            case 'say':
+
+            break;
+            case 'tell':
+            break;
+        }
+    }
 }
 
 class UnknownCommand extends Command {
@@ -26,9 +46,15 @@ class WhoCommand extends Command {
 
         $players = $this->world->getPlayers();
 
-        return "-----------------------------------------------\r\n"
-            . implode("\r\n", $players) . "\r\n"
-            . "-----------------------------------------------\r\n";
+        $str = "+-----------------------------------------------+\r\n";
+        $width = strlen($str) - 3;
+
+        foreach($players as $player) {
+            $str .= str_pad("| " . ucfirst($player->name()), $width) . "|\r\n";
+        }
+        $str .= "+-----------------------------------------------+\r\n\r\n";
+
+        return $str;
     }
 }
 

@@ -56,13 +56,22 @@ while(true) {
 	// and the socket_select() will tell us if we can write without blocking
 	//
 	foreach($client_meta as $client) {
-		if( !empty($client['queued_messages']) ) {
+		if( isset($client['player']) && $client['player']->hasMessages() ) {
 			$write[] = $client['socket'];
 			
 			// can't set sockets for reading and writing, causes socket_select() to hang
 			if( in_array($client['socket'], $read) ) {
 				unset($read[$client['socket']]);
 			}
+		}
+
+		if( isset($client['queued_messages']) && count($client['queued_messages']) > 0 ) {
+			$write[] = $client['socket'];
+			
+			// can't set sockets for reading and writing, causes socket_select() to hang
+			if( in_array($client['socket'], $read) ) {
+				unset($read[$client['socket']]);
+			}			
 		}
 	}
 	
@@ -81,8 +90,7 @@ while(true) {
 
             socket_getpeername($new_sock, $ip);
 			echo "[SERVER] setup socket for $new_sock\n";
-			$client_meta[(int)$new_sock] = array('state'=>'new', 'peername'=>$ip, 'queued_commands'=>array(), 'socket'=>$new_sock,
-				'queued_messages'=>array());
+			$client_meta[(int)$new_sock] = array('state'=>'new', 'peername'=>$ip, 'queued_commands'=>array(), 'socket'=>$new_sock);
 				
 			$key = array_search($server_sock, $read);
 			unset($read[$key]);
@@ -90,7 +98,7 @@ while(true) {
 
 			$client_meta[(int)$new_sock]['queued_messages'][] = file_get_contents('intro.txt');
 			$login_question = $questions->byId("login-prompt");
-			$client_meta[(int)$new_sock]['queued_messages'][] = $login_question['message'] . " ";
+			$client_meta[(int)$new_sock]['queued_messages'][] = $login_question['message'];
 			$client_meta[(int)$new_sock]['question'] = "login-prompt";
 		}
 
@@ -102,7 +110,9 @@ while(true) {
 				
 				// check if the client is disconnected
 				if ($data === false) {
-					// remove client for $clients array
+					// client disconnected, cleanup
+					$client_meta[(int)$read_sock]['player']->save();
+					$world->removePlayer($client_meta[(int)$read_sock]['player']);
 					echo "[{$client_meta[(int)$read_sock]['peername']} disconnected\n";
 					$key = array_search($read_sock, $clients);
 					unset($clients[$key]);
@@ -140,18 +150,21 @@ while(true) {
 		//
 		if( !empty($write) && count($write) > 0 ) {
 			foreach($write as $write_sock) {
-				if( !empty($client_meta[(int)$write_sock]['queued_messages']) ) {
-					$msg = array_shift($client_meta[(int)$write_sock]['queued_messages']);
-				
+				if( isset($client['player']) ) {
+					$next_message = $client_meta[(int)$write_sock]['player']->getMessage();
+
+					socket_write($write_sock, $next_message);
+				}
+
+				if( count($client['queued_messages']) > 0 ) {
+					$msg = array_shift($client['queued_messages']);
+
 					socket_write($write_sock, $msg);
 				}
 			}
 		}
 	}
-	
-	/* resolve outgoing message(s) to client(s) */
-	
-	
+
 	/* resolve client state/last message */
 	$dispose = array();
 	
@@ -172,32 +185,34 @@ while(true) {
 							$player = Player::load($cmd);
 							$client['potential_player'] = $player;
 							$secret_question = $questions->byId("authenticate-user");
+							//$client['player']->sendMessage($secret_question['message']);
 							$client['queued_messages'][] = $secret_question['message'];
 							$client['question'] = "authenticate-user";
 						}
 						catch(Exception $e) {
-							//$client['queued_messages'][] = "That name has not been recorded in the Royal Register!\r\n\r\n";
 							$not_found_question = $questions->byId("start-registration");
+							//$client['player']->sendMessage($not_found_question['message']);
 							$client['queued_messages'][] = $not_found_question['message'];
 							$client['question'] = "start-registration";
 							$client['create'] = ['username'=>$cmd];
 						}
 						break;
 					case "start-registration": // create user
-						//echo "We'd like to create a user, but it's not implemented yet\n";
-						//$client['queued_messages'][] = "Sorry, the quill has run out of ink and the name cannot be registered.\r\n\r\n";
 						$secret_question = $questions->byId("select-race");
+						//$client['player']->sendMessage($secret_question['message']);
 						$client['queued_messages'][] = $secret_question['message'];
 						$client['question'] = "select-race";
 					break;
 					case "select-race":
 						$secret_question = $questions->byId("enter-password-1");
+						//$client['player']->sendMessage($secret_question['message']);
 						$client['queued_messages'][] = $secret_question['message'];
 						$client['question'] = "enter-password-1";
 						$client['create']['race'] = $cmd;
 					break;
 					case "enter-password-1":
 						$secret_question = $questions->byId("enter-password-2");
+						//$client['player']->sendMessage($secret_question['message']);
 						$client['queued_messages'][] = $secret_question['message'];
 						$client['question'] = "enter-password-2";
 						$client['create']['password'] = $cmd;
@@ -205,12 +220,15 @@ while(true) {
 					case "enter-password-2":
 						if( $cmd === $client['create']['password'] ) {
 							$question = $questions->byId("enter-email");
+							//$client['player']->sendMessage($question['message']);
 							$client['queued_messages'][] = $question['message'];
 							$client['question'] = "enter-email";
 						}
 						else {
-							$client['queued_messages'][] = "Sorry, those secret phrases do not match.  Please re-enter.\r\n";
+							//$client['player']->sendMessage("Sorry, passwords did not match.  Please re-enter\r\n");
+							$client['queued_messages'][] = "Sorry, passwords did not match.  Please re-enter\r\n";
 							$question = $questions->byId("enter-password-1");
+							//$client['player']->sendMessage($question['message']);
 							$client['queued_messages'][] = $question['message'];
 							$client['question'] = "enter-password-1";
 							unset($client['create']['password']);
@@ -241,8 +259,10 @@ while(true) {
 							unset($client['question']);
 						}
 						else {
+							//$client['player']->sendMessage("That do not appear to be a valid email address.  Please re-enter.\r\n");
 							$client['queued_messages'][] = "That do not appear to be a valid email address.  Please re-enter.\r\n";
 							$question = $questions->byId("enter-email");
+							//$client['player']->sendMessage($question['message']);
 							$client['queued_messages'][] = $question['message'];
 							$client['question'] = "enter-email";
 						}
@@ -258,13 +278,13 @@ while(true) {
 							unset($client['potential_player']);
 							unset($client['question']);
 							echo "[{$client['peername']}] Player {$client['player']->name()} logged in\n";
-							$client['queued_messages'][] = Terminal::BOLD . Terminal::LIGHT_WHITE 
-								. "WELCOME {$client['player']->name()}\r\n\r\n" . Terminal::RESET;		
+							$client['player']->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE 
+								. "WELCOME {$client['player']->name()}\r\n\r\n" . Terminal::RESET);		
 						}
 						else {
-							$client['queued_messages'][] = "Sorry, the secret phrase was incorrect.\r\n\r\n";
+							$client['player']->sendMessage("Sorry, the secret phrase was incorrect.\r\n\r\n");
 							$question = $questions->byId("login-prompt");
-							$client['queued_messages'][] = $question['message'];
+							$client['player']->sendMessage($question['message']);
 							$client['question'] = "login-prompt";
 						}
 					break;
@@ -282,37 +302,44 @@ while(true) {
 					echo "[SERVER] Got action with instance of " . get_class($action) . "\n";
 
 					switch(true) {
-						case $action instanceof QuitCommand:
+						case $action instanceof QuitCommand: // special command
+							$client['player']->save();
+							$world->removePlayer($client['player']);
+
+							unset($client_meta[(int)$socket]);
+							$key = array_search($socket, $clients);
+							unset($clients[$key]);
+
 							socket_close($socket);
-							$dispose[] = $id;
+
 							echo "[{$client['peername']}] Requesting to quit\n";
 						break;
 						case $action instanceof LookCommand:
 						case $action instanceof MoveCommand:
 						case $action instanceof WhoCommand:
-							$client['queued_messages'][] = $client['player']->performAction($action);
+							$client['player']->sendMessage($client['player']->performAction($action));
 						break;
 						default:
 							echo "[{$client['peername']}] Command not found: {$action->argv(0)}\n";
-							$client['queued_messages'][] = "Sorry, command '{$action->argv(0)}' not recognized\r\n";	
+							$client['player']->sendMessage("Sorry, command '{$action->argv(0)}' not recognized\r\n");
 					}
 				}
 			}		
 
 			if( isset($client['player']) ) {
-				$client['queued_messages'][] = $client['player']->prompt();
+				$client['player']->sendMessage($client['player']->prompt());
 			}
 		}
 	}
 	
 	// remove any clients that 'quit'
 	foreach($dispose as $id) {
-		unset($client_meta[$id]);
 		$key = array_search($read_sock, $clients);
 
-		$world->removePlayer($clients[$key]['player']);
-		$clients[$key]['player']->save();
-		
+		$world->removePlayer($client_meta[$id]['player']);
+		$client_meta[$id]['player']->save();
+
+		unset($client_meta[$id]);
         unset($clients[$key]);
 	}
 	
@@ -322,9 +349,6 @@ while(true) {
 		echo "[SERVER] There are " . number_format($world->countPlayers(), 0) . " client(s) connected\n";
 		$timer = $en;
 	}
-	
-	//echo json_encode($client_meta) . "\n\n";
-	//sleep(2);
 }
 
 socket_close($server_sock);

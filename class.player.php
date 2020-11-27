@@ -9,6 +9,18 @@ class Player {
     // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
 
+    public function sendMessage($text) {
+        $this->messages[] = $text;
+    }
+
+    public function getMessage() {
+        return array_shift($this->messages);
+    }
+
+    public function hasMessages() {
+        return (count($this->messages) > 0);
+    }
+
     public function performAction(Command $command) {
         return $this->state->perform($command);
     }

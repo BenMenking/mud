@@ -39,8 +39,11 @@ class World {
     }
 
     public function removePlayer(Player $player) {
-        if( $key = array_search($player, $this->players) ) {
-            unset($this->players[$key]);
+        foreach($this->players as $idx=>$currentPlayer) {
+            if( $currentPlayer == $player ) {
+                unset($this->players[$idx]);
+                break;
+            }
         }
     }
 
