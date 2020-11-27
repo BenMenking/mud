@@ -6,7 +6,7 @@ class Player {
     // volatile variables that do not get permanently recorded
     public $state, $authenticated = false, $messages = [], $room;
 
-    // non-volatile variables that get saved to user record
+    // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
 
     public function performAction(Command $command) {
@@ -14,7 +14,7 @@ class Player {
     }
 
     public static function load($name) {
-        $file = "users/" . User::pathify($name) . ".json";
+        $file = "players/" . Player::pathify($name) . ".json";
 
         if( file_exists($file) ) {
             $instance = new self();
@@ -26,7 +26,7 @@ class Player {
             return $instance;
         }
         else {
-            throw new Exception('User does not exist');
+            throw new Exception('Players does not exist');
         }
     }
 
@@ -48,10 +48,10 @@ class Player {
         }
     }
 
-    public static function create($name, $class, $race, $attributes, $password, $email_address, $starting_room) {
+    public static function create($name, $race, $attributes, $password, $email_address, $starting_room) {
         $instance = new self();
 
-        $file = "users/" . User::pathify($name) . ".json";
+        $file = "players/" . Player::pathify($name) . ".json";
         $instance->meta['name'] = $name;
         $instance->meta['race'] = 'human';
         $instance->meta['attributes'] = $attributes;

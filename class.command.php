@@ -16,7 +16,7 @@ class ExitsCommand extends Command {
     public function perform() {
         parent::perform();
 
-        return "Exits: " . $this->user->room->exits() . "\r\n";
+        return "Exits: " . $this->player->room->exits() . "\r\n";
     }
 }
 
@@ -32,7 +32,7 @@ class LookCommand extends Command {
     public function perform() {
         parent::perform();
 
-        return $this->user->room->name() . "\r\n" . $this->user->room->description() . "\r\n[Exits: " . $this->user->room->exits() . "]\r\n\r\n";
+        return $this->player->room->name() . "\r\n" . $this->player->room->description() . "\r\n[Exits: " . $this->player->room->exits() . "]\r\n\r\n";
     }
 }
 
@@ -40,18 +40,18 @@ class MoveCommand extends Command {
     public function perform() {
         parent::perform();
 
-        $exits = explode(',', $this->user->room->exits(','));
+        $exits = explode(',', $this->player->room->exits(','));
 
         if( in_array($this->cmds[0], $exits) ) {
-            $room = $this->user->room->getWorld()->traverse($this->user->room, $this->cmds[0]);
+            $room = $this->player->room->getWorld()->traverse($this->player->room, $this->cmds[0]);
             
             if( is_null($room) ) {
                 return "You cannot go that direction\r\n";
             }
             else {
-                $this->user->setRoom($room);
-                return $this->user->room->name() . "\r\n" . $this->user->room->description()
-                    . "\r\n[Exits: " . $this->user->room->exits() . "]\r\n\r\n";
+                $this->player->setRoom($room);
+                return $this->player->room->name() . "\r\n" . $this->player->room->description()
+                    . "\r\n[Exits: " . $this->player->room->exits() . "]\r\n\r\n";
             }
         }
         else {
@@ -71,10 +71,10 @@ class KillCommand extends Command {
 
 
 class Command {
-    protected $user, $world, $cmds;
+    protected $player, $world, $cmds;
 
-    public function __construct(User $user, World $world, Array $cmds) {
-        $this->user = $user;
+    public function __construct(Player $player, World $world, Array $cmds) {
+        $this->player = $player;
         $this->world = $world;
         $this->cmds = $cmds;
     }
@@ -94,10 +94,10 @@ class Command {
 
 class InputHandler {
     // this file maps input commands to command Classes/Objects
-    private $user, $world;
+    private $player, $world;
 
-    public function __construct(User $user, World $world) {
-        $this->user = $user;
+    public function __construct(Player $player, World $world) {
+        $this->player = $player;
         $this->world = $world;
     }
 
@@ -206,7 +206,7 @@ class InputHandler {
     }
 
     private function constructCommand($command_class, Array $cmds) {
-        return new $command_class($this->user, $this->world, $cmds);
+        return new $command_class($this->player, $this->world, $cmds);
     }
 
     private function explode_ex($delimiter, $str) {

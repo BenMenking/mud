@@ -191,16 +191,10 @@ while(true) {
 						$client['question'] = "select-race";
 					break;
 					case "select-race":
-						$secret_question = $questions->byId("select-class");
-						$client['queued_messages'][] = $secret_question['message'];
-						$client['question'] = "select-class";
-						$client['create']['race'] = $cmd;
-					break;
-					case "select-class":
 						$secret_question = $questions->byId("enter-password-1");
 						$client['queued_messages'][] = $secret_question['message'];
 						$client['question'] = "enter-password-1";
-						$client['create']['class'] = $cmd;
+						$client['create']['race'] = $cmd;
 					break;
 					case "enter-password-1":
 						$secret_question = $questions->byId("enter-password-2");
@@ -225,8 +219,7 @@ while(true) {
 					case "enter-email":
 						if( ($cmd = filter_var($cmd, FILTER_VALIDATE_EMAIL)) !== false ) {
 							$u = Player::create(
-								$client['create']['username'], 
-								$client['create']['class'], 
+								$client['create']['username'],  
 								$client['create']['race'], 
 								[
 									'strength'=>7,
@@ -239,8 +232,12 @@ while(true) {
 								$client['create']['password'], $cmd, $world->getSpawn()
 							);
 							$u->save();
+
+							$client['state'] = 'playing';
 							$client['player'] = $u;
-							$client['state'] = "playing";
+							$client['player']->setRoom($world->getSpawn());
+							$client['input'] = new InputHandler($client['player'], $world);
+							unset($client['question']);
 						}
 						else {
 							$client['queued_messages'][] = "That do not appear to be a valid email address.  Please re-enter.\r\n";
