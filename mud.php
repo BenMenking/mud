@@ -55,22 +55,22 @@ while(true) {
 	// if we have data to write to a client, we need to add that client's socket to the $write
 	// and the socket_select() will tell us if we can write without blocking
 	//
-	foreach($client_meta as $client) {
+	foreach($client_meta as $socket=>$client) {
 		if( isset($client['player']) && $client['player']->hasMessages() ) {
-			$write[] = $client['socket'];
+			$write[] = $socket;
 			
 			// can't set sockets for reading and writing, causes socket_select() to hang
-			if( in_array($client['socket'], $read) ) {
-				unset($read[$client['socket']]);
+			if( in_array($socket, $read) ) {
+				unset($read[$socket]);
 			}
 		}
 
 		if( isset($client['queued_messages']) && count($client['queued_messages']) > 0 ) {
-			$write[] = $client['socket'];
+			$write[] = $socket;
 			
 			// can't set sockets for reading and writing, causes socket_select() to hang
-			if( in_array($client['socket'], $read) ) {
-				unset($read[$client['socket']]);
+			if( in_array($socket, $read) ) {
+				unset($read[$socket]);
 			}			
 		}
 	}
@@ -173,9 +173,7 @@ while(true) {
 	
 	echo "[SERVER] AT TOP OF CLIENT_META LOOP\n";
 
-	foreach($client_meta as $id=>&$client) {
-		$socket = $client['socket'];
-
+	foreach($client_meta as $socket=>&$client) {
 		echo "[SERVER] Client resource ID: " . $socket . "\n";
 
 		/**
