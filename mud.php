@@ -343,10 +343,12 @@ while(true) {
 		}
 	}
 	
+	echo "[SERVER] " . json_encode($client_meta, JSON_PRETTY_PRINT) . "\n";
+
 	// remove any clients that 'quit'
 	foreach($dispose as $id) {
 		echo "[SERVER] disposing of resource id $id\n";
-		
+
 		$key = array_search($read_sock, $clients);
 
 		$world->removePlayer($client_meta[$id]['player']);
