@@ -343,7 +343,7 @@ while(true) {
 		}
 	}
 	
-	echo "[SERVER] " . json_encode($client_meta, JSON_PRETTY_PRINT) . "\n";
+	echo "[SERVER] " . print_r($client_meta, true) . "\n";
 
 	// remove any clients that 'quit'
 	foreach($dispose as $id) {
