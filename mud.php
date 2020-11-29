@@ -171,10 +171,11 @@ while(true) {
 	/* resolve client state/last message */
 	$dispose = array();
 	
+	echo "[SERVER] AT TOP OF CLIENT_META LOOP\n";
+
 	foreach($client_meta as $id=>&$client) {
 		$socket = $client['socket'];
-		
-		echo "[SERVER] AT TOP OF CLIENT_META LOOP\n";
+
 		echo "[SERVER] Client resource ID: " . $socket . "\n";
 
 		/**
@@ -344,6 +345,8 @@ while(true) {
 	
 	// remove any clients that 'quit'
 	foreach($dispose as $id) {
+		echo "[SERVER] disposing of resource id $id\n";
+		
 		$key = array_search($read_sock, $clients);
 
 		$world->removePlayer($client_meta[$id]['player']);
