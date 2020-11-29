@@ -144,6 +144,7 @@ class StandingState extends PlayerStates {
             case $command instanceof LookCommand:
             case $command instanceof MoveCommand:
             case $command instanceof WhoCommand:
+            case $command instanceof CommCommand:
                 return $command->perform();
             break;
             default:
@@ -159,6 +160,7 @@ class RestingState extends PlayerStates {
         switch(true) {
             case $command instanceof LookCommand:
             case $command instanceof WhoCommand:
+            case $command instanceof CommCommand:
                 return $command->perform();
             break;
             default:
@@ -173,6 +175,7 @@ class SleepingState extends PlayerStates {
 
         switch(true) {
             case $command instanceof WhoCommand:
+            case $command instanceof CommCommand:
                 return $command->perform();
             break;
             default:
@@ -188,6 +191,7 @@ class IncapacitatedState extends PlayerStates {
         switch(true) {
             case $command instanceof LookCommand:
             case $command instanceof WhoCommand:
+            case $command instanceof CommCommand:
                 $command->perform();
             break;
             default:

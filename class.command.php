@@ -15,14 +15,38 @@ class CommCommand extends Command {
                 array_shift($cmds);
 
                 foreach($this->world->getPlayers() as $player) {
-                    
+                    if( $player != $this->player ) {
+                        $player->sendMessage("{$this->player->name()} shouts '" . implode(' ', $cmds) . "'\r\n");
+                    }
                 }
-                return "{$this->player->name()} shouts '" . implode(' ', $cmds) . "'\r\n";
+                return "You shout '" . implode(' ', $cmds) . "'\r\n";
             break;
             case 'say':
+                $cmds = $this->cmds;
+                array_shift($cmds);
 
+                foreach($this->world->getPlayers() as $player) {
+                    if( $player->room() == $this->player->room() ) {
+                        $player->sendMessage("{$this->player->name()} says '" . implode(' ', $cmds) . "'\r\n");
+                    }
+                }
+                return null;
             break;
             case 'tell':
+                $cmds = $this->cmds;
+                array_shift($cmds);
+                $target_name = array_shift($cmds);
+
+                try {
+                    $target_player = Player::load($target_name);
+
+                    if( $target_player->online() ) {
+                        $target_player->sendMessage("{$this->player->name()} tells you '" . $implode(' ' , $cmds) . "'\r\n");
+                    }
+                }
+                catch(Exception $e) {
+                    return "Sorry, that player does not exist\r\n";
+                }
             break;
         }
     }
@@ -168,15 +192,16 @@ class InputHandler {
             case 'who':
                 return $this->constructCommand("WhoCommand", $cmds);
             break;
-            case 'help':
-                return $this->constructCommand("HelpCommand", $cmds);
-            break;
+            //case 'help':
+            //    return $this->constructCommand("HelpCommand", $cmds);
+            //break;
             case 'say':
             case 'shout':
             case 'gossip':
             case 'tell':
                 return $this->constructCommand("CommCommand", $cmds);
             break;
+            /*
             case 'inventory':
             case 'i':
                 return $this->constructCommand("InventoryCommand", $cmds);
@@ -232,6 +257,7 @@ class InputHandler {
             case 'aff':
                 return $this->constructCommand("AffectsCommand", $cmds);
             break;
+            */
             default:
                 return $this->constructCommand("UnknownCommand", $cmds);
         }

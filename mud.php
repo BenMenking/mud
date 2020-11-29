@@ -111,8 +111,10 @@ while(true) {
 				// check if the client is disconnected
 				if ($data === false) {
 					// client disconnected, cleanup
-					$client_meta[(int)$read_sock]['player']->save();
-					$world->removePlayer($client_meta[(int)$read_sock]['player']);
+					if( isset($client_meta[(int)$read_sock]['player']) ) {
+						$client_meta[(int)$read_sock]['player']->save();
+						$world->removePlayer($client_meta[(int)$read_sock]['player']);
+					}
 					echo "[{$client_meta[(int)$read_sock]['peername']} disconnected\n";
 					$key = array_search($read_sock, $clients);
 					unset($clients[$key]);
@@ -317,6 +319,7 @@ while(true) {
 						case $action instanceof LookCommand:
 						case $action instanceof MoveCommand:
 						case $action instanceof WhoCommand:
+						case $action instanceof CommCommand:
 							$client['player']->sendMessage($client['player']->performAction($action));
 						break;
 						default:
