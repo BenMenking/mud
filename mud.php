@@ -174,6 +174,9 @@ while(true) {
 	foreach($client_meta as $id=>&$client) {
 		$socket = $client['socket'];
 		
+		echo "[SERVER] AT TOP OF CLIENT_META LOOP\n";
+		echo "[SERVER] Client resource ID: " . $socket . "\n";
+
 		/**
 		 * A command was entered by the client, process it
 		 */
@@ -329,6 +332,9 @@ while(true) {
 					}
 				}
 			}		
+			else {
+				echo "[SERVER] I don't know how we got here\n";
+			}
 
 			if( isset($client['player']) ) {
 				$client['player']->sendMessage($client['player']->prompt());
