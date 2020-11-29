@@ -90,17 +90,17 @@ while(true) {
 
             socket_getpeername($new_sock, $ip, $port);
 			echo "[SERVER] setup socket for $new_sock\n";
-			$client_meta[(int)$new_sock] = array('state'=>'new', 'peername'=>$ip, 
+			$client_meta[$new_sock] = array('state'=>'new', 'peername'=>$ip, 
 				'peerport'=>$port, 'queued_commands'=>array(), 'socket'=>$new_sock);
 				
 			$key = array_search($server_sock, $read);
 			unset($read[$key]);
             echo "[$ip:$port] connected\n";	
 
-			$client_meta[(int)$new_sock]['queued_messages'][] = file_get_contents('intro.txt');
+			$client_meta[$new_sock]['queued_messages'][] = file_get_contents('intro.txt');
 			$login_question = $questions->byId("login-prompt");
-			$client_meta[(int)$new_sock]['queued_messages'][] = $login_question['message'];
-			$client_meta[(int)$new_sock]['question'] = "login-prompt";
+			$client_meta[$new_sock]['queued_messages'][] = $login_question['message'];
+			$client_meta[$new_sock]['question'] = "login-prompt";
 		}
 
 		// there is data we can read from a socket, so let's do that.  could also indicate a disconnect
@@ -112,14 +112,14 @@ while(true) {
 				// check if the client is disconnected
 				if ($data === false) {
 					// client disconnected, cleanup
-					if( isset($client_meta[(int)$read_sock]['player']) ) {
-						$client_meta[(int)$read_sock]['player']->save();
-						$world->removePlayer($client_meta[(int)$read_sock]['player']);
+					if( isset($client_meta[$read_sock]['player']) ) {
+						$client_meta[$read_sock]['player']->save();
+						$world->removePlayer($client_meta[$read_sock]['player']);
 					}
-					echo "[{$client_meta[(int)$read_sock]['peername']}:{$client_meta[(int)$read_sock]['peerport']} disconnected\n";
+					echo "[{$client_meta[$read_sock]['peername']}:{$client_meta[$read_sock]['peerport']} disconnected\n";
 					$key = array_search($read_sock, $clients);
 					unset($clients[$key]);
-					unset($client_meta[(int)$read_sock]);					
+					unset($client_meta[$read_sock]);					
 					continue;
 				}
 
@@ -135,7 +135,7 @@ while(true) {
 				}
 				
 				if( !empty($terms) ) {
-					$client_meta[(int)$read_sock]['ntv'] = $terms;
+					$client_meta[$read_sock]['ntv'] = $terms;
 				}
 				
 				socket_getpeername($read_sock, $ip, $port);
@@ -145,7 +145,7 @@ while(true) {
 				
 				// add this command to the client's queue
 				foreach($message as $msg)
-					$client_meta[(int)$read_sock]['queued_commands'][] = $msg;
+					$client_meta[$read_sock]['queued_commands'][] = $msg;
 			}
 		}
 		
@@ -153,14 +153,14 @@ while(true) {
 		//
 		if( !empty($write) && count($write) > 0 ) {
 			foreach($write as $write_sock) {
-				if( isset($client_meta[(int)$write_sock]['player']) ) {
-					$next_message = $client_meta[(int)$write_sock]['player']->getMessage();
+				if( isset($client_meta[$write_sock]['player']) ) {
+					$next_message = $client_meta[$write_sock]['player']->getMessage();
 
 					socket_write($write_sock, $next_message);
 				}
 
-				if( count($client_meta[(int)$write_sock]['queued_messages']) > 0 ) {
-					$msg = array_shift($client_meta[(int)$write_sock]['queued_messages']);
+				if( count($client_meta[$write_sock]['queued_messages']) > 0 ) {
+					$msg = array_shift($client_meta[$write_sock]['queued_messages']);
 
 					socket_write($write_sock, $msg);
 				}
@@ -311,7 +311,7 @@ while(true) {
 							$client['player']->save();
 							$world->removePlayer($client['player']);
 
-							unset($client_meta[(int)$socket]);
+							unset($client_meta[$socket]);
 							$key = array_search($socket, $clients);
 							unset($clients[$key]);
 
