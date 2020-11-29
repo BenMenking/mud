@@ -341,7 +341,7 @@ while(true) {
 		}
 	}
 	
-	echo "[SERVER] " . print_r($client_meta, true) . "\n";
+	//echo "[SERVER] " . print_r($client_meta, true) . "\n";
 
 	// remove any clients that 'quit'
 	foreach($dispose as $id) {
