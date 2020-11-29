@@ -280,7 +280,7 @@ while(true) {
 
 							unset($client['potential_player']);
 							unset($client['question']);
-							echo "[{$client['peername']}:{$client['peerport'}] Player {$client['player']->name()} logged in\n";
+							echo "[{$client['peername']}:{$client['peerport']}] Player {$client['player']->name()} logged in\n";
 							$client['player']->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE 
 								. "WELCOME {$client['player']->name()}\r\n\r\n" . Terminal::RESET);		
 						}
@@ -292,7 +292,7 @@ while(true) {
 						}
 					break;
 					default: 
-						echo "[{$client['peername']}:{$client['peerport'}] Question did not have an ID\n";
+						echo "[{$client['peername']}:{$client['peerport']}] Question did not have an ID\n";
 				}
 			}	
 			else if( $client['state'] == 'playing') {
@@ -315,7 +315,7 @@ while(true) {
 
 							socket_close($socket);
 
-							echo "[{$client['peername']}:{$client['peerport'}] Requesting to quit\n";
+							echo "[{$client['peername']}:{$client['peerport']}] Requesting to quit\n";
 						break;
 						case $action instanceof LookCommand:
 						case $action instanceof MoveCommand:
@@ -324,7 +324,7 @@ while(true) {
 							$client['player']->sendMessage($client['player']->performAction($action));
 						break;
 						default:
-							echo "[{$client['peername']}:{$client['peerport'}] Command not found: {$action->argv(0)}\n";
+							echo "[{$client['peername']}:{$client['peerport']}] Command not found: {$action->argv(0)}\n";
 							$client['player']->sendMessage("Sorry, command '{$action->argv(0)}' not recognized\r\n");
 					}
 				}
