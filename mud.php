@@ -153,14 +153,14 @@ while(true) {
 		//
 		if( !empty($write) && count($write) > 0 ) {
 			foreach($write as $write_sock) {
-				if( isset($client['player']) ) {
+				if( isset($client_meta[(int)$write_sock]['player']) ) {
 					$next_message = $client_meta[(int)$write_sock]['player']->getMessage();
 
 					socket_write($write_sock, $next_message);
 				}
 
-				if( count($client['queued_messages']) > 0 ) {
-					$msg = array_shift($client['queued_messages']);
+				if( count($client_meta[(int)$write_sock]['queued_messages']) > 0 ) {
+					$msg = array_shift($client_meta[(int)$write_sock]['queued_messages']);
 
 					socket_write($write_sock, $msg);
 				}
