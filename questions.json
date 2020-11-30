@@ -3,13 +3,21 @@
         "maximum": 20,
         "minimum": 7,
         "answer_type": "string",
-        "message": "What is thy name? "
+        "message": "What is thy name? ",
+        "correct-next-step": "authenticate-user",
+        "incorrect-next-step": "start-registration"
+    },
+    "authenticate-user": {
+        "answer-type": "string",
+        "message": "Giveth now the secret phrase: "
     },
     "start-registration": {
         "answer": "y",
         "case-insensitive": true,
         "answer_type": "string",
-        "message": "Wouldst thou desire to write that name in the Royal Register? "
+        "message": "Wouldst thou desire to write that name in the Royal Register? ",
+        "correct-next-step": "select-race",
+        "incorrect-next-step": "login-prompt"
     },
     "select-race": {
         "answer": [
@@ -19,32 +27,26 @@
             "dwarf"
         ],
         "answer_type": "choice",
-        "message": "What be thy race? "
-    },
-    "select-class": {
-        "answer": [
-            "cleric",
-            "mage",
-            "warrior"
-        ],
-        "answer_type": "choice",
-        "message": "What class shalt thou choose? "
-    },
-    "enter-email": {
-        "answer-type": "string",
-        "message": "Please enter your email address: "
-    },
-    "authenticate-user": {
-        "answer-type": "string",
-        "message": "Giveth now the secret phrase: "
+        "message": "What be thy race? ",
+        "correct-next-step": "enter-password-1",
+        "incorrect-next-step": "select-race"
     },
     "enter-password-1": {
         "answer-type": "string",
-        "message": "What is thy secret phrase (password)? "
+        "message": "What is thy secret phrase (password)? ",
+        "correct-next-step": "enter-password-2",
+        "incorrect-next-step": "enter-password-1"
     },
     "enter-password-2": {
         "answer-type": "string",
-        "message": "Giveth now the secret phrase (again): "
+        "message": "Giveth now the secret phrase (again): ",
+        "correct-next-step": "enter-email",
+        "incorrect-next-step": "enter-password-1"
+    },
+    "enter-email": {
+        "answer-type": "string",
+        "message": "Please enter your email address: ",
+        "correct-next-step": false,
+        "incorrect-next-step": "enter-email"
     }
-
 }

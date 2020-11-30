@@ -8,7 +8,7 @@ class Questions {
     }
 
     public function byId($id) {
-        return $this->questions[$id];
+        return (isset($this->questions[$id])?$this->questions[$id]:false);
     }
 
     public function validate($id, $answer) {

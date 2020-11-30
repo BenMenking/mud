@@ -4,7 +4,8 @@ use Ramsey\Uuid\Uuid;
 
 class Player {
     // volatile variables that do not get permanently recorded
-    public $state, $authenticated = false, $messages = [], $room;
+    public $state, $authenticated = false, $messages = [];
+    private $room;
 
     // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
@@ -21,7 +22,7 @@ class Player {
         return (count($this->messages) > 0);
     }
 
-    public function performAction(Command $command) {
+    public function perform(Command $command) {
         return $this->state->perform($command);
     }
 
@@ -35,6 +36,9 @@ class Player {
             $instance->playerfile = $file;
             $instance->state = new StandingState();
 
+            $world = new World($instance->meta['world']);
+            $instance->room = $world->getRoom($instance->meta['room']);
+
             return $instance;
         }
         else {
@@ -44,6 +48,8 @@ class Player {
 
     public function setRoom(Room $room) {
         $this->room = $room;
+        $this->meta['room'] = $room->name();
+        $this->meta['world'] = $room->getWorld()->name();
     }
 
     public function save() {
@@ -58,6 +64,10 @@ class Player {
         else {
             return false;
         }
+    }
+
+    public function authenticated() {
+        return $this->authenticated;
     }
 
     public static function create($name, $race, $attributes, $password, $email_address, $starting_room) {
@@ -79,7 +89,6 @@ class Player {
         $instance->meta['temperature'] = 96.7; // in farenheit
         $instance->meta['alignment'] = 0;
         $instance->meta['wearables'] = [];
-        $instance->meta['room'] = $starting_room;
         $instance->meta['wallet'] = 100; // starting coins
         $instance->meta['carrying'] = [];
         $instance->meta['weight'] = 175; // in pounds
@@ -88,11 +97,15 @@ class Player {
         $instance->meta['email'] = $email_address;
         $instance->meta['created'] = time();
         $instance->meta['last_login'] = time();
+        $instance->meta['room'] = '';
+        $instance->meta['world'] = '';
 
         $instance->meta['uuid'] = Uuid::uuid5(Uuid::NAMESPACE_X500, json_encode($instance->meta))->toString();
 
         $instance->state = new StandingState();
         $instance->playerfile = $file;
+
+        $instance->setRoom($instance->meta['room']);
 
         $instance->save();
 
@@ -104,7 +117,7 @@ class Player {
     public function race() { return $this->meta['race']; }
 
     public function base() { return $this->meta['attributes']; }
-    public function room() { return $this->meta['room']; }
+    public function room() { return $this->room; }
 
     public function prompt() {
         return "<H:{$this->meta['health']}/{$this->meta['total_health']} "

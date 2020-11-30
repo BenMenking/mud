@@ -30,10 +30,6 @@ if( !$bind ) { die("Could not bind to {$_ENV['SERVER_ADDR']}:{$_ENV['SERVER_PORT
 // more problems.  another process must have bound to this port before us
 if( !socket_listen($server_sock) ) die("Could not listen on {$_ENV['SERVER_ADDR']}:{$_ENV['SERVER_PORT']}!\n");
 
-// some variables to hold important information about our clients
-$clients = array($server_sock);
-$client_meta = array();
-
 echo "running on {$_ENV['SERVER_ADDR']}:{$_ENV['SERVER_PORT']}\n\n";
 
 $started = microtime(true);
@@ -41,7 +37,7 @@ $timer = microtime(true);
 
 $questions = new Questions();
 $world = new World($_ENV['SERVER_WORLD']);
-$cc = new Clients();
+$clients = new Clients();
 
 // game loop
 while(true) {
@@ -49,17 +45,20 @@ while(true) {
 	/* resolve outgoing messaging to clients */
 	/* resolve client state/last message */
 	
-	$read = $clients;
+	$read = [$server_sock];
 	$write = null;
 	$except = null;
 
 	// if we have data to write to a client, we need to add that client's socket to the $write
 	// and the socket_select() will tell us if we can write without blocking
 	//
-	foreach($cc->all() as $client) {
+	foreach($clients->all() as $client) {
 		if( $client->hasMessages() ) {
 			$write[] = $client->socket();
 		}
+
+		// always add each client to the read
+		$read[] = $client->socket();
 	}
 
 	// if we have data to write to a client, we need to add that client's socket to the $write
@@ -95,13 +94,14 @@ while(true) {
 	// a socket signaled that a change was made.. could be a connect, read or disconnect
 	//
 	if( $num_changed > 0 ) {
-		// if the socket we got is not in our $clients array, it's a new connect
+		// handle new connections
 		//
 		if( !empty($read) && in_array($server_sock, $read) ) {
 			$new_client = new Client(socket_accept($server_sock));
+			$new_client->world($world);
 			$new_client->beginAuthentication();
 
-			$cc->add($new_client);
+			$clients->add($new_client);
 
 			// need to remove $server_sock from $read, otherwise this will cause issues
 			// later in the code
@@ -109,27 +109,7 @@ while(true) {
 			unset($read[$key]);
 		}
 
-		/*
-		if( !empty($read) && in_array($server_sock, $read) ) {
-			$clients[] = $new_sock = socket_accept($server_sock);
-
-            socket_getpeername($new_sock, $ip, $port);
-			echo "[SERVER] setup socket for $new_sock\n";
-			$client_meta[$new_sock] = array('state'=>'new', 'peername'=>$ip, 
-				'peerport'=>$port, 'queued_commands'=>array(), 'socket'=>$new_sock);
-				
-			$key = array_search($server_sock, $read);
-			unset($read[$key]);
-            echo "[$ip:$port] connected\n";	
-
-			$client_meta[$new_sock]['queued_messages'][] = file_get_contents('intro.txt');
-			$login_question = $questions->byId("login-prompt");
-			$client_meta[$new_sock]['queued_messages'][] = $login_question['message'];
-			$client_meta[$new_sock]['question'] = "login-prompt";
-		}
-		*/
-
-		// there is data we can read from a socket, so let's do that.  could also indicate a disconnect
+		// if there are any remaining sockets in $read, process them
 		//
 		if( !empty($read) ) {
 			foreach($read as $read_sock) {
@@ -138,82 +118,47 @@ while(true) {
 				$data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
 
 				if( $data === false ) {
-
+					// client disconnected, cleanup
+					if( $client->player()->authenticated() ) {
+						$client->save();
+						$world->removePlayer($client->player());
+					}
+					$client->disconnect();
+					unset($client);
 				}
 				else {
 					$client->addCommandBuffer($data);
 				}
-				
-				// check if the client is disconnected
-				if ($data === false) {
-					// client disconnected, cleanup
-					if( isset($client_meta[$read_sock]['player']) ) {
-						$client_meta[$read_sock]['player']->save();
-						$world->removePlayer($client_meta[$read_sock]['player']);
-					}
-					echo "[{$client_meta[$read_sock]['peername']}:{$client_meta[$read_sock]['peerport']} disconnected\n";
-					$key = array_search($read_sock, $clients);
-					unset($clients[$key]);
-					unset($client_meta[$read_sock]);					
-					continue;
-				}
-
-				$terms = array();
-				
-				$message_t = explode("\r\n", read_stream($data, $terms));
-				$message = array();
-				
-				foreach($message_t as $data) {
-					if( strlen(trim($data)) > 0 ) {
-						$message[] = trim($data);
-					}
-				}
-				
-				if( !empty($terms) ) {
-					$client_meta[$read_sock]['ntv'] = $terms;
-				}
-				
-				socket_getpeername($read_sock, $ip, $port);
-				
-				if( count($message) > 0 )
-					echo "[$ip:$port] said '" . implode(',', $message) . "'\n";
-				
-				// add this command to the client's queue
-				foreach($message as $msg)
-					$client_meta[$read_sock]['queued_commands'][] = $msg;
 			}
 		}
 		
-		// we are able to write messages out to sockets without blocking
-		//
 		if( !empty($write) && count($write) > 0 ) {
 			foreach($write as $write_sock) {
-				if( isset($client_meta[$write_sock]['player']) ) {
-					$next_message = $client_meta[$write_sock]['player']->getMessage();
+				$client = $clients->getBySocket($write_sock);
 
-					socket_write($write_sock, $next_message);
-				}
-
-				if( count($client_meta[$write_sock]['queued_messages']) > 0 ) {
-					$msg = array_shift($client_meta[$write_sock]['queued_messages']);
-
-					socket_write($write_sock, $msg);
-				}
+				@socket_write($write_sock, $client->popMessage());
 			}
 		}
 	}
 
+	//
+	// Let clients process commands and such
+	//
+	foreach($clients->all() as $client) {
+		$client->execute();
+	}
+
+	
 	/* resolve client state/last message */
 	$dispose = array();
-	
+	/*
 	echo "[SERVER] AT TOP OF CLIENT_META LOOP\n";
 
 	foreach($client_meta as $socket=>&$client) {
 		echo "[SERVER] Client resource ID: " . $socket . "\n";
 
-		/**
-		 * A command was entered by the client, process it
-		 */
+		//A command was entered by the client, process it
+
 		if( !empty($client['queued_commands']) ) {
 			$cmd = array_shift($client['queued_commands']);
 	
@@ -391,16 +336,18 @@ while(true) {
         unset($clients[$key]);
 	}
 	
+	*/
 	$en = microtime(true);
 	
-	if( $en - $timer > 15 ) {
-		echo "[SERVER] There are " . number_format($world->countPlayers(), 0) . " client(s) connected\n";
+	if( $en - $timer > 10 ) {
+		echo "[SERVER] There are " . number_format($world->countPlayers(), 0) . " players connected\n";
 		$timer = $en;
 	}
 }
 
 socket_close($server_sock);
 
+/*
 function read_stream($data, &$terms) {
 	global $command_descriptions, $option_descriptions;
 	
@@ -430,7 +377,7 @@ function read_stream($data, &$terms) {
 	
 	return $message;
 }
-
+*/
 function hex_dump($data, $newline="\n")
 {
   static $from = '';

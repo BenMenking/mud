@@ -1,12 +1,13 @@
 <?php
 
 class World {
-    private $world;
+    private $world, $name;
     private $rooms = [], $spawn_id;
     private $players = [];
 
     public function __construct($name) {
         $file = 'worlds/' . strtolower($name) . '.json';
+        $this->name = $name;
 
         if( file_exists($file) ) {
             $this->world = json_decode(file_get_contents($file), true);
@@ -56,6 +57,7 @@ class World {
         }
     }
 
+    public function name() { return $this->name; }
     public function getSpawn() {
         return $this->rooms[$this->spawn_id];
     }
