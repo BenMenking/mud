@@ -125,7 +125,7 @@ class Client {
     }
 
     public function execute() {
-        //echo "[SERVER] client->execute()\n";
+        $status = null;
 
         if( $this->hasCommands() ) {
             $command = $this->popCommand();
@@ -137,7 +137,6 @@ class Client {
 
                 switch($this->state) {
                     case 'login-prompt':
-                        //echo "[SERVER] 'login-prompt' command: $command\n";
                         try {
 							$this->player = Player::load($command);
                             $this->pushMessage($success_question['message']);
@@ -148,20 +147,19 @@ class Client {
                             $this->pushMessage($failed_question['message']);
                             $this->state = $question['incorrect-next-step'];
                         }
-                        //echo "[SERVER] 'login-prompt' state: {$this->state}\n";
                     break;
                     case 'authenticate-user':
-                        //echo "[SERVER] 'authenticate-user' command: $command\n";
                         if( $this->player->authenticate($command) ) {
                             $this->pushMessage("You may now enter!\r\n\r\n");
                             $this->state = "playing";
+                            
+                            $status = 'authenticated'; 
                         }
                         else {
                             $this->player = null;
                             $this->pushMessage("Sorry, that is incorrect.\r\n");
                             $this->state = $question['incorrect-next-step'];
                         }
-                        //echo "[SERVER] 'authenticate-user' state: {$this->state}\n";
                     break;
                 }
             }
@@ -172,12 +170,14 @@ class Client {
                 
                 $cmdObj = CommandFactory::factory($commands, $this->player);
 
-                return $this->player->perform($cmdObj);
+                $this->pushMessage($this->player->perform($cmdObj));
             }
         }
         else {
             echo "[SERVER] has no commands\n";
         }
+
+        return $status;
     }
 
     public function id() { return $this->id; }

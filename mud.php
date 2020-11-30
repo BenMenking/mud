@@ -119,7 +119,7 @@ while(true) {
 
 				if( $data === false ) {
 					// client disconnected, cleanup
-					if( $client->player()->authenticated() ) {
+					if( $client->player() && $client->player()->authenticated() ) {
 						$client->save();
 						$world->removePlayer($client->player());
 					}
@@ -145,7 +145,11 @@ while(true) {
 	// Let clients process commands and such
 	//
 	foreach($clients->all() as $client) {
-		$client->execute();
+		$status = $client->execute();
+
+		if( $status == 'authenticated' ) {
+			$world->addPlayer($client->player());
+		}
 	}
 
 	

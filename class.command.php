@@ -86,6 +86,9 @@ class LookCommand extends Command {
     public function perform() {
         parent::perform();
 
+        echo "FOO: palyer = " . $this->player . "\n";
+        echo "FOO: room = " . $this->player->room() . "\n";
+
         return Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
             . $this->player->room()->description() . "\r\n" . Terminal::LIGHT_CYAN . "[Exits: " 
             . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::RESET;
@@ -124,7 +127,7 @@ class QuitCommand extends Command {
 class Command {
     protected $player, $cmds;
 
-    public function __constuct(Player $player, Array $cmds) {
+    public function __construct(Player $player, Array $cmds) {
         $this->player = $player;
         $this->cmds = $cmds;
     }
@@ -159,6 +162,7 @@ class CommandFactory {
             case 'say': case 'gossip': case 'shout': case 'tell':
                 return new CommCommand($player, $cmds);
             case 'look': case 'l':
+                echo "player: " . $player . "\n";
                 return new LookCommand($player, $cmds);
             default:
                 return new UnknownCommand($player, $cmds);
