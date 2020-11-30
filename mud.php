@@ -41,6 +41,7 @@ $timer = microtime(true);
 
 $questions = new Questions();
 $world = new World($_ENV['SERVER_WORLD']);
+$cc = new Clients();
 
 // game loop
 while(true) {
@@ -51,10 +52,20 @@ while(true) {
 	$read = $clients;
 	$write = null;
 	$except = null;
-	
+
 	// if we have data to write to a client, we need to add that client's socket to the $write
 	// and the socket_select() will tell us if we can write without blocking
 	//
+	foreach($cc->all() as $client) {
+		if( $client->hasMessages() ) {
+			$write[] = $client->socket();
+		}
+	}
+
+	// if we have data to write to a client, we need to add that client's socket to the $write
+	// and the socket_select() will tell us if we can write without blocking
+	//
+	/*
 	foreach($client_meta as $socket=>$client) {
 		if( isset($client['player']) && $client['player']->hasMessages() ) {
 			$write[] = $socket;
@@ -74,6 +85,7 @@ while(true) {
 			}			
 		}
 	}
+	*/
 	
 	$num_changed = socket_select($read, $write, $except, 5);
 	
@@ -85,6 +97,19 @@ while(true) {
 	if( $num_changed > 0 ) {
 		// if the socket we got is not in our $clients array, it's a new connect
 		//
+		if( !empty($read) && in_array($server_sock, $read) ) {
+			$new_client = new Client(socket_accept($server_sock));
+			$new_client->beginAuthentication();
+
+			$cc->add($new_client);
+
+			// need to remove $server_sock from $read, otherwise this will cause issues
+			// later in the code
+			$key = array_search($server_sock, $read);
+			unset($read[$key]);
+		}
+
+		/*
 		if( !empty($read) && in_array($server_sock, $read) ) {
 			$clients[] = $new_sock = socket_accept($server_sock);
 
@@ -102,12 +127,22 @@ while(true) {
 			$client_meta[$new_sock]['queued_messages'][] = $login_question['message'];
 			$client_meta[$new_sock]['question'] = "login-prompt";
 		}
+		*/
 
 		// there is data we can read from a socket, so let's do that.  could also indicate a disconnect
 		//
 		if( !empty($read) ) {
 			foreach($read as $read_sock) {
-				 $data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
+				$client = $clients->getBySocket($read_sock);
+
+				$data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
+
+				if( $data === false ) {
+
+				}
+				else {
+					$client->addCommandBuffer($data);
+				}
 				
 				// check if the client is disconnected
 				if ($data === false) {
