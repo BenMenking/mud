@@ -1,39 +1,42 @@
 {
     "login-prompt": {
         "maximum": 20,
-        "minimum": 7,
-        "answer_type": "string",
+        "minimum": 3,
+        "answer-type": "string",
         "message": "What is thy name? ",
         "correct-next-step": "authenticate-user",
         "incorrect-next-step": "start-registration"
     },
     "authenticate-user": {
         "answer-type": "string",
-        "message": "Giveth now the secret phrase: "
+        "message": "Giveth now the secret phrase: ",
+        "terminator": true
     },
     "start-registration": {
         "answer": "y",
         "case-insensitive": true,
-        "answer_type": "string",
-        "message": "Wouldst thou desire to write that name in the Royal Register? ",
+        "answer-type": "string",
+        "message": "Wouldst thou desire to write that name in the Royal Register [y/N]? ",
         "correct-next-step": "select-race",
         "incorrect-next-step": "login-prompt"
     },
     "select-race": {
-        "answer": [
+        "choices": [
             "human",
             "drow",
             "orc",
             "dwarf"
         ],
         "answer_type": "choice",
-        "message": "What be thy race? ",
+        "message": "What be thy race [human, drow, orc, dwarf]? ",
         "correct-next-step": "enter-password-1",
         "incorrect-next-step": "select-race"
     },
     "enter-password-1": {
+        "maximum": 24,
+        "minimum": 7,
         "answer-type": "string",
-        "message": "What is thy secret phrase (password)? ",
+        "message": "Set a secret phrase (password)? ",
         "correct-next-step": "enter-password-2",
         "incorrect-next-step": "enter-password-1"
     },
@@ -44,9 +47,10 @@
         "incorrect-next-step": "enter-password-1"
     },
     "enter-email": {
-        "answer-type": "string",
+        "answer-type": "email",
         "message": "Please enter your email address: ",
         "correct-next-step": false,
-        "incorrect-next-step": "enter-email"
+        "incorrect-next-step": "enter-email",
+        "terminator": true
     }
 }

@@ -162,6 +162,123 @@ class Client {
                         }
                     break;
                 }
+                /*
+			if( $client['state'] == 'new' ) {  // socket just setup and we don't have a Player attached to this client
+				switch($client['question']) {
+					case "login-prompt":
+						// see if player exists
+						try {
+							$player = Player::load($cmd);
+							$client['potential_player'] = $player;
+							$secret_question = $questions->byId("authenticate-user");
+							//$client['player']->sendMessage($secret_question['message']);
+							$client['queued_messages'][] = $secret_question['message'];
+							$client['question'] = "authenticate-user";
+						}
+						catch(Exception $e) {
+							$not_found_question = $questions->byId("start-registration");
+							//$client['player']->sendMessage($not_found_question['message']);
+							$client['queued_messages'][] = $not_found_question['message'];
+							$client['question'] = "start-registration";
+							$client['create'] = ['username'=>$cmd];
+						}
+						break;
+					case "start-registration": // create user
+						$secret_question = $questions->byId("select-race");
+						//$client['player']->sendMessage($secret_question['message']);
+						$client['queued_messages'][] = $secret_question['message'];
+						$client['question'] = "select-race";
+					break;
+					case "select-race":
+						$secret_question = $questions->byId("enter-password-1");
+						//$client['player']->sendMessage($secret_question['message']);
+						$client['queued_messages'][] = $secret_question['message'];
+						$client['question'] = "enter-password-1";
+						$client['create']['race'] = $cmd;
+					break;
+					case "enter-password-1":
+						$secret_question = $questions->byId("enter-password-2");
+						//$client['player']->sendMessage($secret_question['message']);
+						$client['queued_messages'][] = $secret_question['message'];
+						$client['question'] = "enter-password-2";
+						$client['create']['password'] = $cmd;
+					break;
+					case "enter-password-2":
+						if( $cmd === $client['create']['password'] ) {
+							$question = $questions->byId("enter-email");
+							//$client['player']->sendMessage($question['message']);
+							$client['queued_messages'][] = $question['message'];
+							$client['question'] = "enter-email";
+						}
+						else {
+							//$client['player']->sendMessage("Sorry, passwords did not match.  Please re-enter\r\n");
+							$client['queued_messages'][] = "Sorry, passwords did not match.  Please re-enter\r\n";
+							$question = $questions->byId("enter-password-1");
+							//$client['player']->sendMessage($question['message']);
+							$client['queued_messages'][] = $question['message'];
+							$client['question'] = "enter-password-1";
+							unset($client['create']['password']);
+						}
+					break;
+					case "enter-email":
+						if( ($cmd = filter_var($cmd, FILTER_VALIDATE_EMAIL)) !== false ) {
+							$u = Player::create(
+								$client['create']['username'],  
+								$client['create']['race'], 
+								[
+									'strength'=>7,
+									'constitution'=>7,
+									'dexerity'=>7,
+									'wisdom'=>7, 
+									'charisma'=>7,
+									'intelligence'=>7
+								], 
+								$client['create']['password'], $cmd, $world->getSpawn()
+							);
+							$u->save();
+
+							$client['state'] = 'playing';
+							$client['player'] = $u;
+							$client['player']->setRoom($world->getSpawn());
+							$client['input'] = new InputHandler($client['player'], $world);
+							$world->addPlayer($client['player']);
+							unset($client['question']);
+						}
+						else {
+							//$client['player']->sendMessage("That do not appear to be a valid email address.  Please re-enter.\r\n");
+							$client['queued_messages'][] = "That do not appear to be a valid email address.  Please re-enter.\r\n";
+							$question = $questions->byId("enter-email");
+							//$client['player']->sendMessage($question['message']);
+							$client['queued_messages'][] = $question['message'];
+							$client['question'] = "enter-email";
+						}
+					break;
+					case "authenticate-user": // password test
+						if( $client['potential_player']->authenticate($cmd) ) {
+							$client['state'] = 'playing';
+							$client['player'] = $client['potential_player'];
+							$client['player']->setRoom($world->getSpawn());
+							$client['input'] = new InputHandler($client['player'], $world);
+							$world->addPlayer($client['player']);
+
+							unset($client['potential_player']);
+							unset($client['question']);
+							echo "[{$client['peername']}:{$client['peerport']}] Player {$client['player']->name()} logged in\n";
+							$client['player']->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE 
+								. "WELCOME {$client['player']->name()}\r\n\r\n" . Terminal::RESET);		
+						}
+						else {
+							$client['player']->sendMessage("Sorry, the secret phrase was incorrect.\r\n\r\n");
+							$question = $questions->byId("login-prompt");
+							$client['player']->sendMessage($question['message']);
+							$client['question'] = "login-prompt";
+						}
+					break;
+					default: 
+						echo "[{$client['peername']}:{$client['peerport']}] Question did not have an ID\n";
+				}
+
+                */
             }
             else {
                 $commands = $this->explode_ex(' ', $command);

@@ -25,7 +25,7 @@ class World {
         }
     }
     
-    public function addPlayer(Player $player) {
+    public function addPlayer(Player $player, String $uuid) {
         if( !in_array($player, $this->players) ) {
             $this->players[] = $player;
         }
@@ -37,6 +37,16 @@ class World {
 
     public function getPlayers($includeAdmins = true, $includeMortals = true) {
         return $this->players;
+    }
+
+    public function getPlayerWithTag($key, $value) {
+        foreach($this->players as $player) {
+            if( $player->getTag($key) == $value) {
+                return $player;
+            }
+        }
+
+        return null;
     }
 
     public function removePlayer(Player $player) {

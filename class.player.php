@@ -5,7 +5,7 @@ use Ramsey\Uuid\Uuid;
 class Player {
     // volatile variables that do not get permanently recorded
     public $state, $authenticated = false, $messages = [];
-    private $room;
+    private $room, $tags;
 
     // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
@@ -22,8 +22,26 @@ class Player {
         return (count($this->messages) > 0);
     }
 
+    public function addTag($key, $value) {
+        $this->tags[$key] = $value;
+    }
+
+    public function getTag($key) {
+        return isset($this->tags[$key])?$this->tags[$key]:null;
+    }
+
+    public function removeTag($key) {
+        if( isset($this->tags[$key]) ) unset($this->tags[$key]);
+    }
+
     public function perform(Command $command) {
         return $this->state->perform($command);
+    }
+
+    public static function exists($name) {
+        $file = "players/" . Player::pathify($name) . ".json";
+
+        return file_exists($file);
     }
 
     public static function load($name) {
