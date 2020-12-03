@@ -86,12 +86,9 @@ class LookCommand extends Command {
     public function perform() {
         parent::perform();
 
-        echo "FOO: palyer = " . $this->player . "\n";
-        echo "FOO: room = " . $this->player->room() . "\n";
-
-        return Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
+        $this->player->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
             . $this->player->room()->description() . "\r\n" . Terminal::LIGHT_CYAN . "[Exits: " 
-            . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::RESET;
+            . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::RESET);
     }
 }
 
@@ -105,17 +102,17 @@ class MoveCommand extends Command {
             $room = $this->player->room()->getWorld()->traverse($this->player->room(), $this->cmds[0]);
             
             if( is_null($room) ) {
-                return "You cannot go that direction\r\n";
+                $this->player->sendMessage(Terminal::YELLOW . "You cannot go that direction\r\n" . Terminal::RESET);
             }
             else {
                 $this->player->setRoom($room);
-                return Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
+                $this->player->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
                     . $this->player->room()->description() . "\r\n" . Terminal::LIGHT_CYAN . "[Exits: " 
-                    . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::RESET;
+                    . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::RESET);
             }
         }
         else {
-            return "You cannot go that way\r\n";
+            $this->player->sendMessage(Terminal::YELLOW . "You cannot go that way\r\n" . Terminal::RESET);
         }
     }
 }
@@ -150,7 +147,9 @@ class Command {
 }
 
 class CommandFactory {
-    public static function factory(Array $cmds, Player $player) {
+    public static function factory(String $command, Player $player) {
+        $cmds = CommandFactory::explode_ex(' ', $command);
+
         switch($cmds[0]) {
             case 'north': case 'n': case 'south': case 's': case 'east': case 'e':
             case 'west': case 'w': case 'up': case 'u': case 'down': case 'd':
@@ -162,11 +161,31 @@ class CommandFactory {
             case 'say': case 'gossip': case 'shout': case 'tell':
                 return new CommCommand($player, $cmds);
             case 'look': case 'l':
-                echo "player: " . $player . "\n";
                 return new LookCommand($player, $cmds);
             default:
                 return new UnknownCommand($player, $cmds);
         }
     }
+
+    private static function explode_ex($delimiter, $str) {
+        $parts = [];
+        $part = '';
+
+        for($i = 0; $i < strlen($str); $i++) {
+            if( $str[$i] == $delimiter && strlen($part) > 0 ) {
+                $parts[] = $part;
+                $part = '';
+            }
+            else {
+                $part .= $str[$i];
+            }		
+        }
+
+        if( strlen($part) > 0 ) {
+            $parts[] = $part;
+        }
+
+        return $parts;
+    }    
 
 }

@@ -56,8 +56,6 @@ class Server {
         }
         $except = [];
 
-        //echo "[SERVER]\twrite: " . json_encode($write) . "\n\n";
-
         $changed = @socket_select($read, $write, $except, $timeout);
 
         if( $changed === false ) {
@@ -145,8 +143,8 @@ class Server {
         $e = strpos($this->incoming[$uuid], "\r\n");
 
         if($e !== false) {
-            $mesasge = trim(substr($this->incoming[$uuid], 0, $e));
-            $this->buffer = substr($this->incoming[$uuid], $e+1);
+            $message = trim(substr($this->incoming[$uuid], 0, $e));
+            $this->incoming[$uuid] = substr($this->incoming[$uuid], $e+1);
         }
 
         return trim($message);

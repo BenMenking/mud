@@ -5,10 +5,18 @@ use Ramsey\Uuid\Uuid;
 class Player {
     // volatile variables that do not get permanently recorded
     public $state, $authenticated = false, $messages = [];
-    private $room, $tags;
+    private $room, $tags, $commands = [];
 
     // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
+
+    public function addCommand($txt) {
+        $this->commands[] = $txt;
+    }
+
+    private function popCommand() {
+        return array_shift($this->commands);
+    }
 
     public function sendMessage($text) {
         $this->messages[] = $text;
@@ -34,8 +42,23 @@ class Player {
         if( isset($this->tags[$key]) ) unset($this->tags[$key]);
     }
 
-    public function perform(Command $command) {
-        return $this->state->perform($command);
+    public function execute() {
+        $command = $this->popCommand();
+
+        if( $command !== null ) {
+            $cmd = CommandFactory::factory($command, $this);
+
+            if( $cmd === null ) {
+                return null;
+            }
+            else {
+                $this->state->perform($cmd);
+                return null;
+            }
+        }
+        else {
+            return null;
+        }
     }
 
     public static function exists($name) {
@@ -54,9 +77,8 @@ class Player {
             $instance->playerfile = $file;
             $instance->state = new StandingState();
 
-            $world = new World($instance->meta['world']);
+            $world = World::getInstance($_ENV['SERVER_WORLD']);
             $instance->room = $world->getRoom($instance->meta['room']);
-
             return $instance;
         }
         else {

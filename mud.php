@@ -22,7 +22,7 @@ catch(Exception $e) {
 	die("Exception creating server: " . $e->getMessage() . "\n\n");
 }
 
-$world = new World($_ENV['SERVER_WORLD']);
+$world = World::getInstance($_ENV['SERVER_WORLD']);
 $logins = [];
 $timer = microtime(true);
 
@@ -40,7 +40,7 @@ while(true) {
 	try {
 		$changes = $server->select();
 
-		echo "[SERVER] changes: " . json_encode($changes) . "\n";
+		//echo "[SERVER] changes: " . json_encode($changes) . "\n";
 
 		foreach($changes as $type=>$change) {
 			foreach($change as $uuid) {
@@ -50,21 +50,52 @@ while(true) {
 				}
 				else if( $type == 'data' ) {
 					if( isset($logins[$uuid]) ) {
-						echo "found a LOGIN object\n";
-						$response = $logins[$uuid]->processAnswer($server->getNextMessage($uuid));
-						if( $response === true ) {
-							// create player
-							echo "need to CREATE player\n";
+						$answer = $server->getNextMessage($uuid);
+
+						if( strlen($answer) == 0 ) continue;
+
+						$response = $logins[$uuid]->processAnswer($answer);
+						if( $response['completed'] === true ) {
+							if( $response['state'] == 'authenticate-user') {
+								// log player in
+								try {
+									$p = Player::load($response['data']['login-prompt']);
+									if( $p->authenticate($response['data']['authenticate-user']) ) {
+										$p->addTag('uuid', $uuid);
+										$p->addCommand('look');
+										$world->addPlayer($p);
+										unset($logins[$uuid]);
+									}
+									else {
+										$server->queueMessage($uuid, $logins[$uuid]->begin());
+									}
+								}
+								catch(Exception $e) {
+									$server->queueMessage($uuid, $logins[$uuid]->begin());
+								}
+							}
+							else {
+								// attempt to create new user
+								unset($logins[$uuid]);
+							}
 						}
 						else {
-							echo "sending back response: $response\n";
-							$server->queueMessage($uuid, $response);
+							$server->queueMessage($uuid, $response['data']);
 						}
 					}
 					else {
-						echo "found a REGULAR player response\n";
-						$player = $world->getPlayerWithTag('uuid', $uuid);
-						$player->sendMessage($server->getNextMessage($uuid));
+						$player = $world->getPlayerWithTag('uuid', $uuid);						
+						
+						if( !is_null($player) ) {
+							$command = $server->getNextMessage($uuid);
+
+							if( strlen($command) > 0 ) {
+								$player->addCommand($command);
+							}	
+						}
+						else {
+							echo "[SERVER] got a null player\n";
+						}
 					}
 				}
 				else if( $type == 'disconnected' ) {
@@ -91,10 +122,6 @@ while(true) {
 	//
 	foreach($world->getPlayers() as $player) {
 		$status = $player->execute();
-
-		if( $status == 'authenticated' ) {
-			$world->addPlayer($client->player());
-		}
 	}
 
 	$en = microtime(true);

@@ -1,8 +1,8 @@
 <?php
 
 class Login {
-    private $uuid, $state;
-    private $questions;
+    private $uuid, $state, $data;
+    private $questions, $answers = [];
 
     public function __construct($uuid) {
         $this->uuid = $uuid;
@@ -11,6 +11,7 @@ class Login {
     }
 
     public function begin() {
+        $this->answers = [];
         $this->state = "login-prompt";
 
         return $this->questions[$this->state]['message'];
@@ -19,53 +20,67 @@ class Login {
     public function processAnswer($answer) {
         $current_question = $this->questions[$this->state];
 
+        echo "STATE: $this->state\n";
+        echo "ANSWER: $answer\n";
+        echo "CURRENT_QUESTION: " . json_encode($current_question) . "\n";
+
         switch($current_question['answer-type']) {
             case "string":
                 if( is_string($answer) ) {
-                    echo "LOGIN: proper string\n";
                     if( isset($current_question['terminator']) && $current_question['terminator'] ) {
-                        return true;
+                        $this->answers[$this->state] = $answer;
+                        return ["completed"=>true, "data"=>$this->answers, "state"=>$this->state];
                     }
                     else {
+                        $this->answers[$this->state] = $answer;
                         $this->state = $current_question['correct-next-step'];
-                        return $this->questions[$this->state]['message'];
+                        return ["completed"=>false, "data"=>$this->questions[$this->state]['message'],
+                            "state"=>$this->state];
                     }
                 }
                 else {
-                    echo "LOGIN: improper string\n";
-                    $this->state = $current_question['incorrect-next-step'];
-                    return $this->questions[$this->state]['message'];
+                     $this->state = $current_question['incorrect-next-step'];
+                    return ["completed"=>false, "data"=>$this->questions[$this->state]['message'],
+                        "state"=>$this->state];
                 }
             break;
             case "choice":
                 if( in_array($answer, $current_question['choices']) ) {
                     if( isset($current_question['terminator']) && $current_question['terminator'] ) {
-                        return true;
+                        $this->answers[$this->state] = $answer;
+                        return ["completed"=>true, "data"=>$this->answers, "state"=>$this->state];
                     }
                     else {
+                        $this->answers[$this->state] = $answer;
                         $this->state = $current_question['correct-next-step'];
-                        return $this->questions[$this->state]['message'];
+                        return ["completed"=>false, "data"=>$this->questions[$this->state]['message'],
+                            "state"=>$this->state];
                     }
                 }
                 else {
                     $this->state = $current_question['incorrect-next-step'];
-                    return $this->questions[$this->state]['message'];
+                    return ["completed"=>false, "data"=>$this->questions[$this->state]['message'],
+                        "state"=>$this->state];
                 }
             break;
             case "email":
                 if( $email = filter_var($answer, FILTER_VALIDATE_EMAIL) ) {
 
                     if( isset($current_question['terminator']) && $current_question['terminator'] ) {
-                        return true;
+                        $this->answers[$this->state] = $answer;
+                        return ["completed"=>true, "data"=>$this->answers, "state"=>$this->state];
                     }
                     else {
-                        $this->state = $current_question['incorrect-next-step'];
-                        return $this->questions[$this->state]['message'];
+                        $this->answers[$this->state] = $answer;
+                        $this->state = $current_question['correct-next-step'];
+                        return ["completed"=>false, "data"=>$this->questions[$this->state]['message'], 
+                            "state"=>$this->state];
                     }                    
                 }
                 else {
                     $this->state = $current_question['incorrect-next-step'];
-                    return $this->questions[$this->state]['message'];
+                    return ["completed"=>false, "data"=>$this->questions[$this->state]['message'], 
+                        "state"=>$this->state];
                 }
             break;
         }

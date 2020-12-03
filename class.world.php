@@ -1,18 +1,19 @@
 <?php
 
 class World {
-    private $world, $name;
+    private $data, $name;
     private $rooms = [], $spawn_id;
     private $players = [];
+    private static $instance = null;
 
-    public function __construct($name) {
+    private function __construct($name) {
         $file = 'worlds/' . strtolower($name) . '.json';
         $this->name = $name;
 
         if( file_exists($file) ) {
-            $this->world = json_decode(file_get_contents($file), true);
+            $this->data = json_decode(file_get_contents($file), true);
 
-            foreach($this->world['rooms'] as $id=>$room) {
+            foreach($this->data['rooms'] as $id=>$room) {
                 $this->rooms[$id] = Room::load($room, $id, $this);
 
                 if( isset($room['spawn']) && $room['spawn'] ) {
@@ -25,7 +26,16 @@ class World {
         }
     }
     
-    public function addPlayer(Player $player, String $uuid) {
+    public static function getInstance($name) {
+        if (self::$instance == null)
+        {
+          self::$instance = new World($name);
+        }
+     
+        return self::$instance;
+    }
+
+    public function addPlayer(Player $player) {
         if( !in_array($player, $this->players) ) {
             $this->players[] = $player;
         }
@@ -75,6 +85,11 @@ class World {
     public function getRoom($id) {
         return $this->rooms[$id];
     }
+}
+
+class Area {
+    private $world;
+    private $rooms = [];
 }
 
 class Room {
