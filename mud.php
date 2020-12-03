@@ -3,9 +3,6 @@
 date_default_timezone_set('America/New_York');
 
 require_once('vendor/autoload.php');
-
-// this contains all of our TELNET protcol related stuff
-require_once('telnet.inc.php');
 require_once('class.mudserver.php');
 
 // load our .env file into $_ENV
@@ -40,8 +37,6 @@ while(true) {
 	try {
 		$changes = $server->select();
 
-		//echo "[SERVER] changes: " . json_encode($changes) . "\n";
-
 		foreach($changes as $type=>$change) {
 			foreach($change as $uuid) {
 				if( $type == 'new' ) {
@@ -65,6 +60,7 @@ while(true) {
 										$p->addCommand('look');
 										$world->addPlayer($p);
 										unset($logins[$uuid]);
+										echo "[SERVER] Player {$p->name()} logged in\n";
 									}
 									else {
 										$server->queueMessage($uuid, $logins[$uuid]->begin());
@@ -75,6 +71,7 @@ while(true) {
 								}
 							}
 							else {
+								echo "[SERVER] need to write new user implementation!\n";
 								// attempt to create new user
 								unset($logins[$uuid]);
 							}
@@ -94,7 +91,7 @@ while(true) {
 							}	
 						}
 						else {
-							echo "[SERVER] got a null player\n";
+							echo "[SERVER] Error: got a null player, UUID is $uuid\n";
 						}
 					}
 				}
@@ -126,7 +123,7 @@ while(true) {
 
 	$en = microtime(true);
 	
-	if( $en - $timer > 10 ) {
+	if( $en - $timer > 15 ) {
 		echo "[SERVER] There are " . number_format($world->countPlayers(), 0) . " players connected\n";
 		$timer = $en;
 	}

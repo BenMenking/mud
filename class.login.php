@@ -20,10 +20,6 @@ class Login {
     public function processAnswer($answer) {
         $current_question = $this->questions[$this->state];
 
-        echo "STATE: $this->state\n";
-        echo "ANSWER: $answer\n";
-        echo "CURRENT_QUESTION: " . json_encode($current_question) . "\n";
-
         switch($current_question['answer-type']) {
             case "string":
                 if( is_string($answer) ) {

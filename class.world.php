@@ -49,6 +49,16 @@ class World {
         return $this->players;
     }
 
+    public function getPlayer(String $name) {
+        foreach($this->players as $player) {
+            if( strtolower($player->name()) == strtolower($name)) {
+                return $player;
+            }
+        }
+
+        return null;
+    }
+
     public function getPlayerWithTag($key, $value) {
         foreach($this->players as $player) {
             if( $player->getTag($key) == $value) {

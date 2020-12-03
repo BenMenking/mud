@@ -31,23 +31,25 @@ class CommCommand extends Command {
                 $this->player->sendMessage("You say '" . implode(' ', $cmds) . "\r\n");
             break;
             case 'tell':
+            case 't':
                 $cmds = $this->cmds;
                 array_shift($cmds);
                 $target_name = array_shift($cmds);
 
                 try {
-                    $target_player = Player::load($target_name);
+                    $world = World::getInstance($this->player->room()->getWorld()->name());
+                    $target_player = $world->getPlayer($target_name);
 
-                    if( $target_player->online() ) {
-                        $target_player->sendMessage("{$this->player->name()} tells you '" . $implode(' ' , $cmds) . "'\r\n");
-                        $this->player->sendMessage("You tell {$target_player->name()} '" . $implode(' ', $cmds) . "\r\n");
+                    if( $target_player ) {
+                        $target_player->sendMessage(Terminal::LIGHT_BLACK . "{$this->player->name()} tells you " . Terminal::RESET . "'" . implode(' ' , $cmds) . "'\r\n");
+                        $this->player->sendMessage(Terminal::GREEN . "You tell {$target_player->name()} '" . implode(' ', $cmds) . "\r\n" . Terminal::RESET);
                     }
                     else {
-                        $this->player->sendMessage("{$target_player->name()} is not able to hear you.\r\n");
+                        $this->player->sendMessage(Terminal::RED . "{$target_name} is not able to hear you.\r\n" . Terminal::RESET);
                     }
                 }
                 catch(Exception $e) {
-                    $this->player->sendMessage("Sorry, that player does not exist\r\n");
+                    $this->player->sendMessage(Terminal::RED . "Sorry, that player does not exist\r\n" . Terminal::RESET);
                 }
             break;
         }
