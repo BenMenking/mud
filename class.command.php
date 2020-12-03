@@ -4,29 +4,31 @@ class CommCommand extends Command {
     public function perform() {
         parent::perform();
 
+        $world = $this->player->room()->getWorld();
+
         switch($this->cmds[0]) {
             case 'shout':
             case 'gossip':
                 $cmds = $this->cmds;
                 array_shift($cmds);
 
-                foreach($this->world->getPlayers() as $player) {
+                foreach($world->getPlayers() as $player) {
                     if( $player != $this->player ) {
                         $player->sendMessage("{$this->player->name()} shouts '" . implode(' ', $cmds) . "'\r\n");
                     }
                 }
-                return "You shout '" . implode(' ', $cmds) . "'\r\n";
+                $this->player->sendMessage("You shout '" . implode(' ', $cmds) . "'\r\n");
             break;
             case 'say':
                 $cmds = $this->cmds;
                 array_shift($cmds);
 
-                foreach($this->world->getPlayers() as $player) {
+                foreach($world->getPlayers() as $player) {
                     if( $player->room() == $this->player->room() ) {
                         $player->sendMessage("{$this->player->name()} says '" . implode(' ', $cmds) . "'\r\n");
                     }
                 }
-                return null;
+                $this->player->sendMessage("You say '" . implode(' ', $cmds) . "\r\n");
             break;
             case 'tell':
                 $cmds = $this->cmds;
@@ -38,10 +40,14 @@ class CommCommand extends Command {
 
                     if( $target_player->online() ) {
                         $target_player->sendMessage("{$this->player->name()} tells you '" . $implode(' ' , $cmds) . "'\r\n");
+                        $this->player->sendMessage("You tell {$target_player->name()} '" . $implode(' ', $cmds) . "\r\n");
+                    }
+                    else {
+                        $this->player->sendMessage("{$target_player->name()} is not able to hear you.\r\n");
                     }
                 }
                 catch(Exception $e) {
-                    return "Sorry, that player does not exist\r\n";
+                    $this->player->sendMessage("Sorry, that player does not exist\r\n");
                 }
             break;
         }
@@ -52,7 +58,7 @@ class UnknownCommand extends Command {
     public function perform() {
         parent::perform();
 
-        return Terminal::YELLOW . "Command unknown\r\n" . Terminal::RESET;
+        $this->player->sendMessage(Terminal::YELLOW . "Command unknown\r\n" . Terminal::RESET);
     }
 }
 
@@ -60,7 +66,8 @@ class ExitsCommand extends Command {
     public function perform() {
         parent::perform();
 
-        return Terminal::LIGHT_CYAN . "Exits: " . $this->player->room()->exits() . "\r\n" . Terminal::RESET;
+        $this->player->sendMessage(Terminal::LIGHT_CYAN . "Exits: " . $this->player->room()->exits()
+            . "\r\n" . Terminal::RESET);
     }
 }
 
@@ -68,7 +75,9 @@ class WhoCommand extends Command {
     public function perform() {
         parent::perform();
 
-        $players = $this->world->getPlayers();
+        $world = $this->player->room()->getWorld();
+
+        $players = $world->getPlayers();
 
         $str = "+-----------------------------------------------+\r\n";
         $width = strlen($str) - 3;
@@ -78,7 +87,7 @@ class WhoCommand extends Command {
         }
         $str .= "+-----------------------------------------------+\r\n\r\n";
 
-        return $str;
+        $this->player->sendMessage($str);
     }
 }
 
