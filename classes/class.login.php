@@ -7,7 +7,7 @@ class Login {
     public function __construct($uuid) {
         $this->uuid = $uuid;
 
-        $this->questions = json_decode(file_get_contents('questions.json'), true);
+        $this->questions = json_decode(file_get_contents('data/questions.json'), true);
     }
 
     public function begin($state = 'login-prompt', $keep_data = false) {
