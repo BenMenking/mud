@@ -151,6 +151,51 @@ class QuitCommand extends Command {
     }
 }
 
+class StandCommand extends Command {
+    public function perform() {
+        parent::perform();
+
+        $this->player->state = new StandingState();
+        $this->player->sendMessage("You stand.");
+        $room = $this->player->room();
+        foreach($this->player->room()->getWorld()->playersInRoom($room) as $resident) {
+            if( $resident != $this->player ) {
+                $resident->sendMessage("{$this->player->name()} stands up.\r\n");
+            }
+        }
+    }
+}
+
+class SleepCommand extends Command {
+    public function perform() {
+        parent::perform();
+
+        $this->player->state = new SleepState();
+        $this->player->sendMessage("You go to sleep.");
+        $room = $this->player->room();
+        foreach($this->player->room()->getWorld()->playersInRoom($room) as $resident) {
+            if( $resident != $this->player ) {
+                $resident->sendMessage("{$this->player->name()} goes to sleep.\r\n");
+            }
+        }
+    }
+}
+
+class RestCommand extends Command {
+    public function perform() {
+        parent::perform();
+
+        $this->player->state = new RestState();
+        $this->player->sendMessage("You sit.");
+        $room = $this->player->room();
+        foreach($this->player->room()->getWorld()->playersInRoom($room) as $resident) {
+            if( $resident != $this->player ) {
+                $resident->sendMessage("{$this->player->name()} sits down.\r\n");
+            }
+        }
+    }
+}
+
 class Command {
     protected $player, $cmds;
 
@@ -192,6 +237,12 @@ class CommandFactory {
                 return new CommCommand($player, $cmds);
             case 'look': case 'l':
                 return new LookCommand($player, $cmds);
+            case 'stand': case 'st':
+                return new StandCommand($player, $cmds);
+            case 'rest': case 'sit':  case 'wake':
+                return new RestCommand($player, $cmds);
+            case 'sleep': 
+                return new SleepCommand($player, $cmds);
             default:
                 return new UnknownCommand($player, $cmds);
         }

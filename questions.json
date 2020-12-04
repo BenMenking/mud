@@ -5,7 +5,8 @@
         "answer-type": "string",
         "message": "What is thy name? ",
         "correct-next-step": "authenticate-user",
-        "incorrect-next-step": "start-registration"
+        "incorrect-next-step": "start-registration",
+        "terminator": true
     },
     "authenticate-user": {
         "answer-type": "string",
@@ -27,7 +28,7 @@
             "orc",
             "dwarf"
         ],
-        "answer_type": "choice",
+        "answer-type": "choice",
         "message": "What be thy race [human, drow, orc, dwarf]? ",
         "correct-next-step": "enter-password-1",
         "incorrect-next-step": "select-race"

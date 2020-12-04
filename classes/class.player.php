@@ -155,7 +155,7 @@ class Player {
         $instance->meta['email'] = $email_address;
         $instance->meta['created'] = time();
         $instance->meta['last_login'] = time();
-        $instance->meta['room'] = '';
+        $instance->meta['room'] = $starting_room->name();
         $instance->meta['world'] = '';
         $instance->meta['inventory'] = [];
         $instance->meta['inventory_capacity'] = 50;
@@ -165,7 +165,7 @@ class Player {
         $instance->state = new StandingState();
         $instance->playerfile = $file;
 
-        $instance->setRoom($instance->meta['room']);
+        $instance->setRoom($starting_room);
 
         $instance->save();
 
@@ -224,6 +224,7 @@ class FightingState extends PlayerStates {
             case $command instanceof MoveCommand:
             case $command instanceof WhoCommand:
             case $command instanceof CommCommand:
+            case $command instanceof StandCommand:
                 return $command->perform();
             break;
             default:
@@ -245,6 +246,8 @@ class StandingState extends PlayerStates {
             case $command instanceof MoveCommand:
             case $command instanceof WhoCommand:
             case $command instanceof CommCommand:
+            case $command instanceof RestCommand:
+            case $command instanceof SleepCommand:
                 return $command->perform();
             break;
             default:
@@ -253,7 +256,7 @@ class StandingState extends PlayerStates {
     }
 }
 
-class RestingState extends PlayerStates {
+class RestState extends PlayerStates {
     public function __construct() {
         $this->name = "resting";
     }
@@ -265,6 +268,8 @@ class RestingState extends PlayerStates {
             case $command instanceof LookCommand:
             case $command instanceof WhoCommand:
             case $command instanceof CommCommand:
+            case $command instanceof StandCommand:
+            case $command instanceof SleepCommand:
                 return $command->perform();
             break;
             default:
@@ -273,7 +278,7 @@ class RestingState extends PlayerStates {
     }
 }
 
-class SleepingState extends PlayerStates {
+class SleepState extends PlayerStates {
     public function __construct() {
         $this->name = "sleeping";
     }
@@ -284,6 +289,8 @@ class SleepingState extends PlayerStates {
         switch(true) {
             case $command instanceof WhoCommand:
             case $command instanceof CommCommand:
+            case $command instanceof StandCommand:
+            case $command instanceof RestCommand:
                 return $command->perform();
             break;
             default:

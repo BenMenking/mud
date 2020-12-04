@@ -51,7 +51,16 @@ while(true) {
 
 						$response = $logins[$uuid]->processAnswer($answer);
 						if( $response['completed'] === true ) {
-							if( $response['state'] == 'authenticate-user') {
+							echo "Completed: true; " . json_encode($response) . "\n";
+							if( $response['state'] == 'login-prompt' ) {
+								if( Player::exists($response['data']['login-prompt']) ) {
+									$server->queueMessage($uuid, $logins[$uuid]->begin('authenticate-user', true));
+								}
+								else {
+									$server->queueMessage($uuid, $logins[$uuid]->begin('start-registration', true));
+								}
+							}
+							else if( $response['state'] == 'authenticate-user') {
 								// log player in
 								try {
 									$p = Player::load($response['data']['login-prompt']);
@@ -70,9 +79,21 @@ while(true) {
 									$server->queueMessage($uuid, $logins[$uuid]->begin());
 								}
 							}
-							else {
+							else if( $response['state'] == 'enter-email' ) {
 								echo "[SERVER] need to write new user implementation!\n";
 								// attempt to create new user
+								echo "response: " . json_encode($response['data']) . "\n";
+								$p = Player::create($response['data']['login-prompt'],
+									$response['data']['select-race'],
+									[],
+									$response['data']['enter-password-1'],
+									$response['data']['enter-email'],
+									$world->getSpawn()
+								);
+								$p->addTag('uuid', $uuid);
+								$p->addCommand('look');
+								$world->addPlayer($p);
+
 								unset($logins[$uuid]);
 							}
 						}

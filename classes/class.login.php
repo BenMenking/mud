@@ -10,9 +10,9 @@ class Login {
         $this->questions = json_decode(file_get_contents('questions.json'), true);
     }
 
-    public function begin() {
-        $this->answers = [];
-        $this->state = "login-prompt";
+    public function begin($state = 'login-prompt', $keep_data = false) {
+        if( !$keep_data ) $this->answers = [];
+        $this->state = $state;
 
         return $this->questions[$this->state]['message'];
     }
