@@ -1,12 +1,5 @@
 <?php
 
-require_once('class.server.php');
-require_once('class.login.php');
-require_once('class.command.php');
-require_once('class.world.php');
-require_once('class.player.php');
-require_once('class.questions.php');
-
 class Terminal {
     const BLACK = "\033[30m";
     const RED = "\033[31m";

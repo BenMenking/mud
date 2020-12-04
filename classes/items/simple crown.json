@@ -1,0 +1,18 @@
+{
+    "antis": "",
+    "type": "armor",
+    "armor_type": "clothing",
+    "affects": {
+        "spellpower": 1,
+        "mana": 10,
+        "intelligence": 1,
+        "hp": 5,
+        "wisdom": 1
+    },
+    "props": "none",
+    "name": "A simple crown",
+    "weight": 7,
+    "value": 15000,
+    "skillpoints": 1000000,
+    "armor_class": 3
+}

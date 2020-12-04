@@ -68,7 +68,7 @@ class ExitsCommand extends Command {
     public function perform() {
         parent::perform();
 
-        $this->player->sendMessage(Terminal::LIGHT_CYAN . "Exits: " . $this->player->room()->exits()
+        $this->player->sendMessage(Terminal::LIGHT_CYAN . "Visible exits: " . $this->player->room()->exits()
             . "\r\n" . Terminal::RESET);
     }
 }
@@ -97,9 +97,17 @@ class LookCommand extends Command {
     public function perform() {
         parent::perform();
 
+        $things = [];
+
+        foreach($this->player->room()->getWorld()->playersInRoom($this->player->room()) as $resident) {
+            if( $resident != $this->player ) {
+                $things[] = "{$resident->name()} is {$resident->state->name} here.";
+            }
+        }
+
         $this->player->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
             . $this->player->room()->description() . "\r\n" . Terminal::LIGHT_CYAN . "[Exits: " 
-            . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::RESET);
+            . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::LIGHT_BLACK . implode("\r\n", $things) . "\r\n\r\n" . Terminal::RESET);
     }
 }
 
@@ -109,17 +117,24 @@ class MoveCommand extends Command {
 
         $exits = explode(',', $this->player->room()->exits(','));
 
-        if( in_array($this->cmds[0], $exits) ) {
-            $room = $this->player->room()->getWorld()->traverse($this->player->room(), $this->cmds[0]);
+        if( in_array(trim($this->cmds[0]), $exits) ) {          
+            $fromRoom = $this->player->room();
+            $destRoom = $this->player->room()->getWorld()->traverse($this->player->room(), $this->cmds[0]);
             
-            if( is_null($room) ) {
+            if( is_null($destRoom) ) {
                 $this->player->sendMessage(Terminal::YELLOW . "You cannot go that direction\r\n" . Terminal::RESET);
             }
             else {
-                $this->player->setRoom($room);
-                $this->player->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
-                    . $this->player->room()->description() . "\r\n" . Terminal::LIGHT_CYAN . "[Exits: " 
-                    . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::RESET);
+                foreach($this->player->room()->getWorld()->playersInRoom($fromRoom) as $resident) {
+                    if( $resident != $this->player ) {
+                        $resident->sendMessage("{$this->player->name()} leaves.\r\n");
+                    }
+                }
+                foreach($this->player->room()->getWorld()->playersInRoom($destRoom) as $resident) {
+                    $resident->sendMessage("{$this->player->name()} arrives.\r\n");
+                }
+                $this->player->setRoom($destRoom);
+                $this->player->executeCommand('look'); // not convinced this is the best way to do this
             }
         }
         else {
@@ -129,7 +144,11 @@ class MoveCommand extends Command {
 }
 
 class QuitCommand extends Command {
-    // it tis what it is
+    public function perform() {
+        parent::perform();
+
+        $this->player->save();
+    }
 }
 
 class Command {

@@ -87,6 +87,16 @@ class World {
         }
     }
 
+    public function playersInRoom($room) {
+        $r = [];
+        foreach($this->players as $player) {
+            if( $player->room() == $room ) {
+                $r[] = $player;
+            }
+        }
+        return $r;
+    }
+
     public function name() { return $this->name; }
     public function getSpawn() {
         return $this->rooms[$this->spawn_id];

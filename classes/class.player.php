@@ -5,7 +5,7 @@ use Ramsey\Uuid\Uuid;
 class Player {
     // volatile variables that do not get permanently recorded
     public $state, $authenticated = false, $messages = [];
-    private $room, $tags, $commands = [];
+    private $room, $tags, $commands = [], $inventory = [];
 
     // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
@@ -20,6 +20,11 @@ class Player {
 
     public function sendMessage($text) {
         $this->messages[] = $text;
+    }
+
+    public function executeCommand($cmd) {
+        $this->addCommand($cmd);
+        $this->execute(false);
     }
 
     public function getMessage() {
@@ -42,7 +47,7 @@ class Player {
         if( isset($this->tags[$key]) ) unset($this->tags[$key]);
     }
 
-    public function execute() {
+    public function execute($show_prompt = true) {
         $command = $this->popCommand();
 
         if( $command !== null ) {
@@ -53,6 +58,7 @@ class Player {
             }
             else {
                 $this->state->perform($cmd);
+                if( $show_prompt ) $this->sendMessage($this->prompt());
                 return null;
             }
         }
@@ -60,6 +66,18 @@ class Player {
             return null;
         }
     }
+
+    public function listInventory() {
+        return $this->meta['inventory'];
+    }
+
+    //public function putInventory() {
+
+    //}
+
+    //public function getInventory() {
+
+    //}
 
     public static function exists($name) {
         $file = "players/" . Player::pathify($name) . ".json";
@@ -139,6 +157,8 @@ class Player {
         $instance->meta['last_login'] = time();
         $instance->meta['room'] = '';
         $instance->meta['world'] = '';
+        $instance->meta['inventory'] = [];
+        $instance->meta['inventory_capacity'] = 50;
 
         $instance->meta['uuid'] = Uuid::uuid5(Uuid::NAMESPACE_X500, json_encode($instance->meta))->toString();
 
@@ -186,10 +206,37 @@ class Player {
 }
 
 class PlayerStates {
+    public $name;
+
     public function perform(Command $command) { }
 }
 
+class FightingState extends PlayerStates {
+    public function __construct() {
+        $this->name = "fighting";
+    }
+
+    public function perform(Command $command) {
+        parent::perform($command);
+
+        switch(true) {
+            case $command instanceof LookCommand:
+            case $command instanceof MoveCommand:
+            case $command instanceof WhoCommand:
+            case $command instanceof CommCommand:
+                return $command->perform();
+            break;
+            default:
+                return "You cannot perform that action while fighting\r\n";
+        }
+    }
+}
+
 class StandingState extends PlayerStates {
+    public function __construct() {
+        $this->name = "standing";
+    }
+    
     public function perform(Command $command) {
         parent::perform($command);
 
@@ -207,6 +254,10 @@ class StandingState extends PlayerStates {
 }
 
 class RestingState extends PlayerStates {
+    public function __construct() {
+        $this->name = "resting";
+    }
+    
     public function perform(Command $command) {
         parent::perform($command);
 
@@ -223,6 +274,10 @@ class RestingState extends PlayerStates {
 }
 
 class SleepingState extends PlayerStates {
+    public function __construct() {
+        $this->name = "sleeping";
+    }
+    
     public function perform(Command $command) {
         parent::perform($command);
 
@@ -238,6 +293,10 @@ class SleepingState extends PlayerStates {
 }
 
 class IncapacitatedState extends PlayerStates {
+    public function __construct() {
+        $this->name = "incapacitated";
+    }
+    
     public function perform(Command $command) {
         parent::perform($command);
 

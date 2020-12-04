@@ -3,7 +3,7 @@
 date_default_timezone_set('America/New_York');
 
 require_once('vendor/autoload.php');
-require_once('class.mudserver.php');
+require_once('classes/autoload.php');
 
 // load our .env file into $_ENV
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -113,7 +113,6 @@ while(true) {
 		die("[SERVER] Exception on select: " . $e->getMessage() . "\n\n");
 	}
 	
-	
 	//
 	// Let clients process commands and such
 	//
@@ -123,8 +122,10 @@ while(true) {
 
 	$en = microtime(true);
 	
-	if( $en - $timer > 15 ) {
+	if( $en - $timer > 10 ) {
 		echo "[SERVER] There are " . number_format($world->countPlayers(), 0) . " players connected\n";
+		echo "[SERVER] Current: " . number_format(round(memory_get_usage() / 1024), 0) . "MB\tPeak: " 
+			. number_format(round(memory_get_peak_usage() / 1024), 0) . "MB\n";
 		$timer = $en;
 	}
 }
