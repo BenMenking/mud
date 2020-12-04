@@ -4,7 +4,7 @@ class Questions {
     private $questions;
 
     public function __construct() {
-        $this->questions = json_decode(file_get_contents('questions.json'), true);
+        $this->questions = json_decode(file_get_contents('data/questions.json'), true);
     }
 
     public function byId($id) {

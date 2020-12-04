@@ -1,29 +1,88 @@
 <?php
 
 class World {
-    private $data, $name;
+    private $name;
     private $rooms = [], $spawn_id;
-    private $players = [];
+    private $players = [], $mobs = [], $items = [];
     private static $instance = null;
 
     private function __construct($name) {
-        $file = 'worlds/' . strtolower($name) . '.json';
+        $file = 'worlds/' . strtolower($name) . '/' . strtolower($name) . '.json';
         $this->name = $name;
 
+        echo "** Loading world $name\n";
+
         if( file_exists($file) ) {
-            $this->data = json_decode(file_get_contents($file), true);
+            $data = json_decode(file_get_contents($file), true);
 
-            foreach($this->data['rooms'] as $id=>$room) {
-                $this->rooms[$id] = Room::load($room, $id, $this);
+            if( is_null($data) ) {
+                echo "Unable to load world file for $name\n";
+            }
+            else {
+                $this->name = $data['world-name'];
 
-                if( isset($room['spawn']) && $room['spawn'] ) {
-                    $this->spawn_id = $id;
+                foreach($data['rooms'] as $id=>$room) {
+                    $this->rooms[$id] = Room::load($room, $id, $this);
+
+                    if( isset($room['spawn']) && $room['spawn'] ) {
+                        $this->spawn_id = $id;
+                    }
                 }
             }
         }
         else {
             throw new Exception("World not found.");
         }
+
+        echo "** Loading items for $name\n";
+
+        // load items
+        //
+        $dir = 'worlds/' . strtolower($name) . '/items/';
+        $objs = scandir($dir);
+
+        foreach($objs as $obj) {
+            if( $obj == '.' || $obj == '..' ) continue;
+
+            if( strpos($obj, '.json') !== false ) {
+                $data = file_get_contents($dir . '/' . $obj);
+                $json = json_decode($data, true);
+
+                if( is_null($json) ) {
+                    echo "   Unable to load item '$obj'\n";
+                }
+                else {
+                    echo "   Loaded item '{$json['name']}'\n";
+                    $this->items[$json['name']] = $json;
+                }
+            }
+        }
+
+        echo "** Loading mobiles for $name\n";
+
+        // load mobs
+        //
+        $dir = 'worlds/' . strtolower($name) . '/mobs/';
+        $objs = scandir($dir);
+
+        foreach($objs as $obj) {
+            if( $obj == '.' || $obj == '..' ) continue;
+
+            if( strpos($obj, '.json') !== false ) {
+                $data = file_get_contents($dir . '/' . $obj);
+                $json = json_decode($data, true);
+
+                if( is_null($json) ) {
+                    echo "   Unable to load mob '$obj'\n";
+                }
+                else {
+                    echo "   Loaded mob '{$json['name']}'\n";
+                    $this->mobs[$json['name']] = $json;
+                }
+            }
+        }
+
+        echo "*** Loading world {$this->name} complete\n";
     }
     
     public static function getInstance($name) {
