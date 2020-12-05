@@ -133,6 +133,7 @@ class Player {
 
         $file = "players/" . Player::pathify($name) . ".json";
         $instance->meta['name'] = $name;
+        $instance->meta['title'] = '';
         $instance->meta['race'] = 'human';
         $instance->meta['attributes'] = $attributes;
         $instance->meta['skill_points'] = 0;
