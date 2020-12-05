@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2020-12-04T15:14:59.622Z" agent="5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36" etag="XuFONgd0kvQC87dWd2Sa" version="13.10.2" type="google">
+  <diagram id="g74X040OY-tAfYa0XG0E" name="Page-1">
+    <mxGraphModel dx="1422" dy="802" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <object label="Grand Lobby" name="Grand Lobby" description="A large, ornate lobby extending upwards into an unknown fog.  The small crystallized window panes set into the stonework let in the perfect amount of light." temperature="72" oxygen_level="100" light_level="50" ambiance="indoor" id="bDJRv0vJ-ZlZOlUeC9b5-2">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+            <mxGeometry x="650" y="140" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="bDJRv0vJ-ZlZOlUeC9b5-6" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="bDJRv0vJ-ZlZOlUeC9b5-5" target="bDJRv0vJ-ZlZOlUeC9b5-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <object label="Training Tower Entrance" name="Grand Lobby" description="An iron-gated entrance slightly shrouded in a strange mist." temperature="68" oxygen_level="100" light_level="45" ambiance="indoor" id="bDJRv0vJ-ZlZOlUeC9b5-5">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="650" y="230" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <object label="" name="" description="" temperature="" oxygen_level="" ambiance="" light_level="" id="bDJRv0vJ-ZlZOlUeC9b5-7">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="40" y="510" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="bDJRv0vJ-ZlZOlUeC9b5-9" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="bDJRv0vJ-ZlZOlUeC9b5-8" target="bDJRv0vJ-ZlZOlUeC9b5-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <object label="Main St" name="Main Street" description="" temperature="78" oxygen_level="100" ambiance="outdoor" light_level="65" id="bDJRv0vJ-ZlZOlUeC9b5-8">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="500" y="140" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="bDJRv0vJ-ZlZOlUeC9b5-11" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="bDJRv0vJ-ZlZOlUeC9b5-10" target="bDJRv0vJ-ZlZOlUeC9b5-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <object label="Main St" name="Main Street" description="" temperature="78" oxygen_level="100" ambiance="outdoor" light_level="65" id="bDJRv0vJ-ZlZOlUeC9b5-10">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="350" y="140" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="bDJRv0vJ-ZlZOlUeC9b5-13" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="bDJRv0vJ-ZlZOlUeC9b5-12" target="bDJRv0vJ-ZlZOlUeC9b5-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <object label="Main St" name="Main Street" description="" temperature="78" oxygen_level="100" ambiance="outdoor" light_level="65" id="bDJRv0vJ-ZlZOlUeC9b5-12">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="200" y="140" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="bDJRv0vJ-ZlZOlUeC9b5-16" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="bDJRv0vJ-ZlZOlUeC9b5-15" target="bDJRv0vJ-ZlZOlUeC9b5-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <object label="Main St" name="Main Street" description="" temperature="78" oxygen_level="100" ambiance="outdoor" light_level="65" id="bDJRv0vJ-ZlZOlUeC9b5-15">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="800" y="140" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="bDJRv0vJ-ZlZOlUeC9b5-18" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="bDJRv0vJ-ZlZOlUeC9b5-17" target="bDJRv0vJ-ZlZOlUeC9b5-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <object label="Main St" name="Main Street" description="" temperature="78" oxygen_level="100" ambiance="outdoor" light_level="65" id="bDJRv0vJ-ZlZOlUeC9b5-17">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="950" y="140" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="bDJRv0vJ-ZlZOlUeC9b5-21" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="bDJRv0vJ-ZlZOlUeC9b5-19" target="bDJRv0vJ-ZlZOlUeC9b5-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <object label="Donation Room" name="Donation Room" description="A round room." temperature="72" oxygen_level="100" ambiance="indoor" light_level="50" id="bDJRv0vJ-ZlZOlUeC9b5-19">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+            <mxGeometry x="650" y="50" width="120" height="60" as="geometry" />
+          </mxCell>
+        </object>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
