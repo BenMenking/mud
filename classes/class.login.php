@@ -10,7 +10,7 @@ class Login {
         $this->questions = json_decode(file_get_contents('data/questions.json'), true);
     }
 
-    public function begin($state = 'login-prompt', $keep_data = false) {
+    public function begin($state = 'login-welcome', $keep_data = false) {
         if( !$keep_data ) $this->answers = [];
         $this->state = $state;
 
