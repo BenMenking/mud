@@ -170,33 +170,3 @@ class Area {
     private $world;
     private $rooms = [];
 }
-
-class Room {
-    private $data, $world;
-
-    public static function load($data, $id, $world) {
-        $room = new self();
-
-        $room->data = $data;
-        $room->data['id'] = $id;
-        $room->world = $world;
-
-        return $room;
-    }
-
-    public function id() { return $this->data['id']; }
-    public function description() { return $this->data['description']; }
-    public function temperature() { return $this->data['temperature']; }
-    public function isSpawn() { return isset($this->data['spawn']); }
-    public function exits($delimiter = ' ') { return implode($delimiter, array_keys($this->data['exits'])); }
-    public function oxy_level() { return $this->data['oxygen_level']; }
-    public function ambiance() { return $this->data['ambiance']; }
-    public function lightLevel() { return $this->data['light_level']; }
-    public function name() { return $this->data['room-name']; }
-    public function hasExit($direction) { return isset($this->data['exits'][$direction])?$this->data['exits'][$direction]['target']:null; }
-    public function getWorld() { return $this->world; }
-
-    public function __toString() {
-        return json_encode($this->data, JSON_PRETTY_PRINT);
-    }
-}
