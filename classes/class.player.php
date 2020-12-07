@@ -106,7 +106,7 @@ class Player {
 
     public function setRoom(Room $room) {
         $this->room = $room;
-        $this->meta['room'] = $room->name();
+        $this->meta['room'] = $room->id();
         $this->meta['world'] = $room->getWorld()->name();
     }
 
@@ -156,7 +156,7 @@ class Player {
         $instance->meta['email'] = $email_address;
         $instance->meta['created'] = time();
         $instance->meta['last_login'] = time();
-        $instance->meta['room'] = $starting_room->name();
+        $instance->meta['room'] = $starting_room->id();
         $instance->meta['world'] = '';
         $instance->meta['inventory'] = [];
         $instance->meta['inventory_capacity'] = 50;
