@@ -1,0 +1,17 @@
+{
+    "name": "sword",
+    "description": "A sturdy sword forged from the latest knowledge in metalsmith.",
+    "type": "weapon",
+    "group": "held",
+    "affects": {
+        "spellpower": 1,
+        "mana": 10,
+        "intelligence": 1,
+        "hp": 5,
+        "wisdom": 1
+    },
+    "props": "none",
+    "weight": 7,
+    "value": 15000,
+    "skillpoints": 100
+}

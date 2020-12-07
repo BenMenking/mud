@@ -7,13 +7,21 @@
             "description": "A large, ornate lobby extending upwards into an unknown fog.  The small crystalized window panes set into the stonework let in the perfect amount of light.",
             "exits": {
                 "south": {
-                    "target": "tikal-training-entrance"
+                    "target": "tikal-training-entrance",
+                    "description": "An entrance to the training grounds.",
+                    "flag": "unrestricted",
+                    "keywords": [],
+                    "key-name": "",
+                    "extras": [
+
+                    ]
                 }
             },
             "temperature": 72,
             "oxygen_level": 100,
             "light_level": 50,
-            "ambiance": "indoor"
+            "env": ["nomob", "indoors", "peaceful", "nomagic"],
+            "terrian": "indoor"
         },
         "tikal-training-entrance": {
             "room-name": "Training Entrance",
@@ -34,7 +42,8 @@
             "temperature": 68,
             "oxygen_level": 100,
             "light_level": 50,
-            "ambiance": "outdoor"
+            "env": [],
+            "terrain": "city"
         }
     }
 }

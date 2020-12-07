@@ -1,8 +1,8 @@
 {
-    "name": "A simple crown",
-    "description": "A simple band of copper fashioned into a crown.",
+    "name": "A small shield",
+    "description": "Round, laminated wooden shield designed to protect what matters most.",
     "type": "armor",
-    "group": "clothing",
+    "group": "held",
     "affects": {
         "spellpower": 1,
         "mana": 10,

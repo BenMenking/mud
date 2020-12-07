@@ -1,0 +1,16 @@
+{
+    "id": "guards_sword",
+    "name": "A city guard's sword",
+    "description": "City issued sword gleams brightly in the sun and bears the city crest.",
+    "extras": [
+        {
+            "sword": "Shiny and smooth with a cross-bar hilt.  Stamped with the city crest and issued only to city guards."
+        }
+    ],
+    "affects": {
+
+    },
+    "props": "",
+    "weight": 10,
+    "value": 0
+}
