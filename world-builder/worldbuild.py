@@ -17,20 +17,25 @@ world = """
 class RoomBuilder():
     def __init__(self):
         self.currentRoom = None
+        self.rooms = []
     def move(self):
         pass
-    def addRoom(self):
-        pass
+    def addRoom(self, roomId, desc, spawn, temp, lightLevel, terrainType):
+        self.rooms.append(roomId)
+        roomId = Room(roomId, desc, spawn, temp, lightLevel, terrainType)
+
 
 class Room():
-    def __init__(self, desc: str, spawn: bool, temperature: int, lightLevel: int, terrainType: str):
+    def __init__(self, roomId: str, desc: str, spawn: bool, temperature: int, lightLevel: int, terrainType: str):
+        self.roomId = roomId
         self.exits = []
         self.description = desc
         self.spawn = spawn
         self.temperature = temperature
         self.lightLevel = lightLevel
         self.terrainType = terrainType
-
+    def addExit(self, direction, target, flag, keywords, keyname):
+        self.exits.append([direction, target, flag, keywords, keyname])
 
 
 
