@@ -1,21 +1,35 @@
+#####################################################
+#  Welcome to the interactive builder. This program #
+#  will simulate you as a player, you will be able  #
+#  to walk between rooms as well as add them in     #
+#  and see them from where you are.                 #
+#####################################################
 
 world = """
 {
-    "world-name": "Tikal",
+    "world-name": "{0}",
     "rooms": {
-                {0}
+                {1}
     }
 }
 """
-def startGen():
-    roomName = input('What do you want to name the room?')
-    spawn = bool(input('Is this room a spawn (true/false)'))
-    description = input('Please describe the room in detail to me')
-    temperature = input('What is the temperature of this room in degF')
-    lightLevel = input('How bright is this room')
-    terrainType = input('What kind of terrain is this: [INSIDE|FIELD|CITY|FOREST|HILLS|MOUNTAINS|WATER_SWIM|WATER_NOSWIM|UNDERWATER|FLYING]')
 
+class RoomBuilder():
+    def __init__(self):
+        self.currentRoom = None
+    def move(self):
+        pass
+    def addRoom(self):
+        pass
 
+class Room():
+    def __init__(self, desc: str, spawn: bool, temperature: int, lightLevel: int, terrainType: str):
+        self.exits = []
+        self.description = desc
+        self.spawn = spawn
+        self.temperature = temperature
+        self.lightLevel = lightLevel
+        self.terrainType = terrainType
 
 
 
@@ -47,7 +61,7 @@ EXITS = """
                 {4}
             ],
             "key-name": "{5}",
-            "extras": [],
+            "extras": []{6}
 """
 #room-name is a string, replacing empty space with _
 #spawn is a bool that states whether it is the world spawn or not
