@@ -117,6 +117,12 @@ class MoveCommand extends Command {
 
         $exits = explode(',', $this->player->room()->exits(','));
 
+        $command_map = ['n'=>'north', 's'=>'south', 'w'=>'west', 'e'=>'east', 'u'=>'up', 'd'=>'down'];
+
+        if( in_array($this->cmds[0], array_keys($command_map)) ) {
+            $this->cmds[0] = $command_map[$this->cmds[0]];
+        }
+
         if( in_array(trim($this->cmds[0]), $exits) ) {          
             $fromRoom = $this->player->room();
             $destRoom = $this->player->room()->getWorld()->traverse($this->player->room(), $this->cmds[0]);
