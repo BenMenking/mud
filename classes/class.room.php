@@ -17,7 +17,7 @@ class Room {
     public function description() { return isset($this->data['description'])?$this->data['description']:'An unimaginative room.'; }
     public function temperature() { return isset($this->data['env']['temperature'])?$this->data['env']['temperature']:70; }
     public function isSpawn() { return isset($this->data['spawn']); }
-    public function exits($delimiter = ' ') { return implode($delimiter, array_keys($this->data['exits'])); }
+    public function exits() { return $this->data['exits']; }
     public function oxygenLevel() { return isset($this->data['env']['oxygen_level'])?$this->data['oxygen_level']:100; }
     public function indoor() { return isset($this->data['env']['indoor'])?$this->data['env']['indoor']:false; }
     public function lightLevel() { return isset($this->data['env']['light_level'])?$this->data['env']['light_level']:50; }
