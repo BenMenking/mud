@@ -202,6 +202,38 @@ class RestCommand extends Command {
     }
 }
 
+class InventoryCommand extends Command {
+    public function perform() {
+        parent::perform();
+
+        $txt = '';
+        foreach($this->player->listInventory() as $item) {
+            $txt .= $item->name() . "\r\n";
+        }
+
+        if( count($this->player->listInventory()) == 0 ) {
+            $txt = Terminal::YELLOW . "There are no items in your inventory.\r\n" . Terminal::RESET;
+        }
+
+        $this->player->sendMessage($txt);
+    }
+}
+
+class ItemActionCommand extends Command {
+    public function perform() {
+        parent::perform();
+
+        $cmd = $this->cmds[0];
+        switch($this->cmds[0]) {
+            case 'put':
+            case 'get':
+            case 'take':
+            case 'drop':
+        }
+        $this->player->sendMessage(Terminal::YELLOW . "Sorry, command '{$this->cmds[0]}' isn't implemented yet.\r\n" . Terminal::RESET);
+    }
+}
+
 class Command {
     protected $player, $cmds;
 
@@ -249,6 +281,10 @@ class CommandFactory {
                 return new RestCommand($player, $cmds);
             case 'sleep': 
                 return new SleepCommand($player, $cmds);
+            case 'inventory': case 'i':
+                return new InventoryCommand($player, $cmds);
+            case 'put': case 'get': case 'drop':
+                return new ItemActionCommand($player, $cmds);
             default:
                 return new UnknownCommand($player, $cmds);
         }

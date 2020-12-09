@@ -28,6 +28,12 @@ class Item {
     private function __save() {
 
     }
+
+    public function name() { return $this->name; }
+    public function volume() { return $this->volume; }
+    public function weight() { return $this->weight; }
+    public function type() { return $this->type; }
+    public function group() { return $this->group; }
 }
 
 class ItemGroup {

@@ -5,7 +5,7 @@ use Ramsey\Uuid\Uuid;
 class Player {
     // volatile variables that do not get permanently recorded
     public $state, $authenticated = false, $messages = [];
-    private $room, $tags, $commands = [], $inventory = [];
+    private $room, $tags, $commands = [];
 
     // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
@@ -71,13 +71,23 @@ class Player {
         return $this->meta['inventory'];
     }
 
-    //public function putInventory() {
+    public function addInventory(Item $item) {
+        return $this->meta['inventory'][] = $item;
+    }
 
-    //}
+    public function removeInventory(Item $item) {
+        $index = array_search($item, $this->meta['inventory']);
 
-    //public function getInventory() {
+        if( $index ) {
+            $item = $this->meta['inventory'][$index];
+            unset($this->meta['inventory'][$index]);
 
-    //}
+            return $item;
+        }
+        else {
+            return false;
+        }
+    }
 
     public static function exists($name) {
         $file = "players/" . Player::pathify($name) . ".json";
@@ -92,6 +102,13 @@ class Player {
             $instance = new self();
 
             $instance->meta = json_decode(file_get_contents($file), true);
+            // check for meta that might have not been saved with player (maybe older file?)
+            if( !isset($instance->meta['inventory']) ) {
+                $instance->meta['inventory'] = [];
+            }
+            if( !isset($instance->meta['inventory_capacity']) ) {
+                $instance->meta['inventory_capacity'] = 50;
+            }
             $instance->playerfile = $file;
             $instance->state = new StandingState();
 
@@ -226,6 +243,8 @@ class FightingState extends PlayerStates {
             case $command instanceof WhoCommand:
             case $command instanceof CommCommand:
             case $command instanceof StandCommand:
+            case $command instanceof InventoryCommand:
+            case $command instanceof ItemActionCommand:
                 return $command->perform();
             break;
             default:
@@ -249,6 +268,8 @@ class StandingState extends PlayerStates {
             case $command instanceof CommCommand:
             case $command instanceof RestCommand:
             case $command instanceof SleepCommand:
+            case $command instanceof InventoryCommand:
+            case $command instanceof ItemActionCommand:                
                 return $command->perform();
             break;
             default:
@@ -271,6 +292,8 @@ class RestState extends PlayerStates {
             case $command instanceof CommCommand:
             case $command instanceof StandCommand:
             case $command instanceof SleepCommand:
+            case $command instanceof InventoryCommand:
+            case $command instanceof ItemActionCommand:
                 return $command->perform();
             break;
             default:
@@ -292,6 +315,7 @@ class SleepState extends PlayerStates {
             case $command instanceof CommCommand:
             case $command instanceof StandCommand:
             case $command instanceof RestCommand:
+            case $command instanceof InventoryCommand:
                 return $command->perform();
             break;
             default:
