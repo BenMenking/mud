@@ -68,8 +68,11 @@ class ExitsCommand extends Command {
     public function perform() {
         parent::perform();
 
-        $this->player->sendMessage(Terminal::LIGHT_CYAN . "Visible exits: " . $this->player->room()->exits()
-            . "\r\n" . Terminal::RESET);
+        $txt = '';
+        foreach($this->player->room()->exits() as $direction=>$exit) {
+            $txt .= $direction . ' - ' . $exit['description'] . "\r\n";
+        }
+        $this->player->sendMessage(Terminal::LIGHT_CYAN . "Visible exits: \r\n$txt" . Terminal::RESET);
     }
 }
 
@@ -107,7 +110,7 @@ class LookCommand extends Command {
 
         $this->player->sendMessage(Terminal::BOLD . Terminal::LIGHT_WHITE . $this->player->room()->name() . Terminal::RESET . "\r\n" 
             . $this->player->room()->description() . "\r\n" . Terminal::LIGHT_CYAN . "[Exits: " 
-            . $this->player->room()->exits() . "]\r\n\r\n" . Terminal::LIGHT_BLACK . implode("\r\n", $things) . "\r\n\r\n" . Terminal::RESET);
+            . implode(' ', array_keys($this->player->room()->exits())) . "]\r\n\r\n" . Terminal::LIGHT_BLACK . implode("\r\n", $things) . "\r\n\r\n" . Terminal::RESET);
     }
 }
 
@@ -115,7 +118,7 @@ class MoveCommand extends Command {
     public function perform() {
         parent::perform();
 
-        $exits = explode(',', $this->player->room()->exits(','));
+        $exits = array_keys($this->player->room()->exits());
 
         $command_map = ['n'=>'north', 's'=>'south', 'w'=>'west', 'e'=>'east', 'u'=>'up', 'd'=>'down'];
 
@@ -285,6 +288,8 @@ class CommandFactory {
                 return new InventoryCommand($player, $cmds);
             case 'put': case 'get': case 'drop':
                 return new ItemActionCommand($player, $cmds);
+            case 'exits': case 'ex':
+                return new ExitsCommand($player, $cmds);
             default:
                 return new UnknownCommand($player, $cmds);
         }

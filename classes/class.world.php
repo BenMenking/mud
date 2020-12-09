@@ -19,13 +19,13 @@ class World {
                 echo "Unable to load world file for $name\n";
             }
             else {
-                $this->name = $data['world-name'];
+                $this->name = $data['name'];
 
-                foreach($data['rooms'] as $id=>$room) {
-                    $this->rooms[$id] = Room::load($room, $id, $this);
+                foreach($data['rooms'] as $room) {
+                    $this->rooms[$room['id']] = Room::load($room, $this);
 
                     if( isset($room['spawn']) && $room['spawn'] ) {
-                        $this->spawn_id = $id;
+                        $this->spawn_id = $room['id'];
                     }
                 }
             }
@@ -157,11 +157,13 @@ class World {
     }
 
     public function name() { return $this->name; }
+
     public function getSpawn() {
         return $this->rooms[$this->spawn_id];
     }
 
     public function getRoom($id) {
+        print_r($this->rooms);
         return $this->rooms[$id];
     }
 }

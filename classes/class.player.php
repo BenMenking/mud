@@ -245,6 +245,7 @@ class FightingState extends PlayerStates {
             case $command instanceof StandCommand:
             case $command instanceof InventoryCommand:
             case $command instanceof ItemActionCommand:
+            case $command instanceof ExitsCommand:
                 return $command->perform();
             break;
             default:
@@ -269,7 +270,8 @@ class StandingState extends PlayerStates {
             case $command instanceof RestCommand:
             case $command instanceof SleepCommand:
             case $command instanceof InventoryCommand:
-            case $command instanceof ItemActionCommand:                
+            case $command instanceof ItemActionCommand:
+            case $command instanceof ExitsCommand:                
                 return $command->perform();
             break;
             default:
@@ -294,6 +296,7 @@ class RestState extends PlayerStates {
             case $command instanceof SleepCommand:
             case $command instanceof InventoryCommand:
             case $command instanceof ItemActionCommand:
+            case $command instanceof ExitsCommand:
                 return $command->perform();
             break;
             default:
