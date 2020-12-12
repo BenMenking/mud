@@ -5,13 +5,21 @@
 #  and see them from where you are.                 #
 #####################################################
 
+#######################################################
+# Instructions for the commandline interface:         #
+# Room names must contain no spaces, rather they      #
+# should be delimited by an underscore, for example   #
+#               example_room_name                     #
+# and that's pretty much the only current restriction #
+#######################################################
+
 world = """
-{
+{{
     "world-name": "{0}",
-    "rooms": {
+    "rooms": {{
                 {1}
-    }
-}
+    }}
+}}
 """
 
 class RoomBuilder():
@@ -19,7 +27,7 @@ class RoomBuilder():
         self.currentRoom = None
         self.rooms = []
     def move(self):
-        pass
+        pass #change active room
     def addRoom(self, roomId, desc, spawn, temp, lightLevel, terrainType):
         self.rooms.append(roomId)
         roomId = Room(roomId, desc, spawn, temp, lightLevel, terrainType)
@@ -36,17 +44,29 @@ class Room():
         self.terrainType = terrainType
     def addExit(self, direction, target, flag, keywords, keyname):
         self.exits.append([direction, target, flag, keywords, keyname])
-
+    def generate(self):
+        #append all teh pretty json here
+        #we need to know if we have more than 1 exit, to properly append commas and commas
+        self.temp = ""
+        if len(self.exits) >= 2:
+            self.totalExits = len(self.exits)
+        for i in range(0, len(self.exits) - 1):
+            if i == len(self.totalExits) - 1:
+                isLastExit = '}'
+            else:
+                isLastExit = '},'
+            self.temp += EXITS.format(self.exits[i][0], self.exits[i][1], self.exits[i][2], self.exits[i][3], self.exits[i][4], self.exits[i][5], isLastExit)
+        return self.temp
 
 
 REFERENCE = """
-{
+{{
     "room-name": "{0}",
     "spawn": "{1}",
     "description": "{2}",
-    "exits" => {
+    "exits" => {{
         {3}
-    },
+    }},
     "temperature": {4},
     "oxygen_level": {5},
     "light_level": {6},
@@ -54,11 +74,11 @@ REFERENCE = """
            "{7}"
      ],
      "terrain": "{8}"
-}
+}}
 """
 
 EXITS = """
-"{0}": {
+"{0}": {{
             "target": "{1}",
             "description": "{2}",
             "flag": "{3}",
