@@ -42,16 +42,16 @@ class Room():
         self.temperature = temperature
         self.lightLevel = lightLevel
         self.terrainType = terrainType
-    def addExit(self, direction, target, flag, keywords, keyname):
-        self.exits.append([direction, target, flag, keywords, keyname])
+    def addExit(self, direction, target, desc, flag, keywords, keyname):
+        self.exits.append([direction, target, desc, flag, keywords, keyname])
     def generate(self):
         #append all teh pretty json here
         #we need to know if we have more than 1 exit, to properly append commas and commas
         self.temp = ""
         if len(self.exits) >= 2:
             self.totalExits = len(self.exits)
-        for i in range(0, len(self.exits) - 1):
-            if i == len(self.totalExits) - 1:
+        for i in range(0, len(self.exits)):
+            if i == self.totalExits - 1:
                 isLastExit = '}'
             else:
                 isLastExit = '},'
