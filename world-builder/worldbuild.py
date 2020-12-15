@@ -28,20 +28,25 @@ class RoomBuilder():
         self.rooms = []
     def move(self):
         pass #change active room
-    def addRoom(self, roomId, desc, spawn, temp, lightLevel, terrainType):
+    def addRoom(self, roomId, desc, spawn, temp, oxygen_level, lightLevel, terrainType):
         self.rooms.append(roomId)
-        roomId = Room(roomId, desc, spawn, temp, lightLevel, terrainType)
+        roomId = Room(roomId, desc, spawn, temp, oxygen_level, lightLevel, terrainType)
+    def build(self):
+        pass #build every room object here and print in all nice into the world reference
+             #on a build, before calling the Room.generate() method, change the endType of the last room in the list to '}'
 
 
 class Room():
-    def __init__(self, roomId: str, desc: str, spawn: bool, temperature: int, lightLevel: int, terrainType: str):
+    def __init__(self, roomId: str, desc: str, spawn: bool, temperature: int, oxygen_level: int, lightLevel: int, terrainType: str, endType='},'):
         self.roomId = roomId
         self.exits = []
         self.description = desc
         self.spawn = spawn
         self.temperature = temperature
+        self.oxygen_level = oxygen_level
         self.lightLevel = lightLevel
         self.terrainType = terrainType
+        self.endType = endType
     def addExit(self, direction, target, desc, flag, keywords, keyname):
         self.exits.append([direction, target, desc, flag, keywords, keyname])
     def generate(self):
@@ -56,11 +61,11 @@ class Room():
             else:
                 isLastExit = '},'
             self.temp += EXITS.format(self.exits[i][0], self.exits[i][1], self.exits[i][2], self.exits[i][3], self.exits[i][4], self.exits[i][5], isLastExit)
-        return self.temp
+        return REFERENCE.format(self.roomId, self.spawn, self.description, self.temp, self.temperature, self.oxygen_level, self.lightLevel, '', self.terrainType, self.endType)
 
 
 REFERENCE = """
-{{
+"{0}": {{
     "room-name": "{0}",
     "spawn": "{1}",
     "description": "{2}",
@@ -74,7 +79,7 @@ REFERENCE = """
            "{7}"
      ],
      "terrain": "{8}"
-}}
+{9}
 """
 
 EXITS = """
