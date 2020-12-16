@@ -51,7 +51,7 @@ class Room():
         self.description = desc
         self.spawn = spawn
         self.temperature = temperature
-        self.oxygen_level = oxygen_levels
+        self.oxygen_level = oxygen_level
         self.lightLevel = lightLevel
         self.terrainType = terrainType
         self.endType = endType
