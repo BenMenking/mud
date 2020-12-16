@@ -29,8 +29,8 @@ class RoomBuilder():
     def move(self):
         pass #change active room
     def addRoom(self, roomId, desc, spawn, temp, oxygen_level, lightLevel, terrainType):
-        self.rooms.append(roomId)
-        roomId = Room(roomId, desc, spawn, temp, oxygen_level, lightLevel, terrainType)
+        vars()[roomId] = Room(roomId, desc, spawn, temp, oxygen_level, lightLevel, terrainType)
+        self.rooms.append(vars()[roomId])
     def build(self):
         pass #build every room object here and print in all nice into the world reference
              #on a build, before calling the Room.generate() method, change the endType of the last room in the list to '}'
