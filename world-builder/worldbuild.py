@@ -35,16 +35,21 @@ class RoomBuilder():
             return 'Please use deleteExit()'
         else:
             setattr(self.currentRoom, thing, to)
-    def addRoom(self, roomId, desc, spawn, temp, oxygen_level, lightLevel, terrainType):
-        vars()[roomId] = Room(roomId, desc, spawn, temp, oxygen_level, lightLevel, terrainType)
+    def addRoom(self, roomId, desc, isSpawn, temp, oxygen_level, lightLevel, terrainType):
+        vars()[roomId] = Room(roomId, desc, isSpawn, temp, oxygen_level, lightLevel, terrainType)
         self.rooms.append(vars()[roomId])
         self.currentRoom = vars()[roomId]
     def listRooms(self):
         for i in self.rooms:
             print(i.roomId)
     def build(self):
-        pass #build every room object here and print in all nice into the world reference
-             #on a build, before calling the Room.generate() method, change the endType of the last room in the list to '}'
+        #build every room object here and print in all nice into the world reference
+        #on a build, before calling the Room.generate() method, change the endType of the last room in the list to '}'
+        self.rooms[-1].endType='}'
+        self.roomString = ''
+        for i in range(0, len(self.rooms)):
+            self.roomString += (self.rooms[i].generate())
+        return world.format(self.roomString)
 
 
 class Room():
