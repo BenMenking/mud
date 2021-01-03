@@ -27,7 +27,11 @@ class RoomBuilder():
         self.currentRoom = None
         self.rooms = []
     def move(self, roomId):
-        self.currentRoom = vars()[roomId]
+        for i in range(0, len(self.rooms)):
+            if self.rooms[i].roomId == roomId:
+                self.currentRoom = self.rooms[i]
+                return 'We changed rooms'
+            return 'We couldn\'t find that room'
     def edit(self, thing, to):
         if thing == 'roomId':
             return 'You cannot edit that'
@@ -42,14 +46,21 @@ class RoomBuilder():
     def listRooms(self):
         for i in self.rooms:
             print(i.roomId)
-    def build(self):
+    def addExit(self):
+        pass
+    def deleteExit(self):
+        pass
+    def listExits(self):
+        return self.currentRoom.exits
+    def build(self, worldName):
         #build every room object here and print in all nice into the world reference
         #on a build, before calling the Room.generate() method, change the endType of the last room in the list to '}'
+        self.worldName = worldName
         self.rooms[-1].endType='}'
         self.roomString = ''
         for i in range(0, len(self.rooms)):
             self.roomString += (self.rooms[i].generate())
-        return world.format(self.roomString)
+        return world.format(self.worldName, self.roomString)
 
 
 class Room():
