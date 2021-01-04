@@ -46,8 +46,8 @@ class RoomBuilder():
     def listRooms(self):
         for i in self.rooms:
             print(i.roomId)
-    def addExit(self):
-        pass
+    def addExit(self, direction, target, desc, flag, keywords, keyname):
+        self.currentRoom.addExit(direction, target, desc, flag, keywords, keyname)
     def deleteExit(self):
         pass
     def listExits(self):
