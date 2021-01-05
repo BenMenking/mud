@@ -47,9 +47,15 @@ class RoomBuilder():
         for i in self.rooms:
             print(i.roomId)
     def addExit(self, direction, target, desc, flag, keywords, keyname):
+        for i in range(0, len(self.currentRoom.exits)):
+            if direction == self.currentRoom.exits[i][0]:
+                return 'There is already an exit in that direction'
         self.currentRoom.addExit(direction, target, desc, flag, keywords, keyname)
-    def deleteExit(self):
-        pass
+    def deleteExit(self, direction):
+        for i in range(0, len(self.currentRoom.exits)):
+            if direction == self.currentRoom.exits[i][0]:
+                return self.currentRoom.exits.pop(i)
+        return 'There is no exit in that direction'
     def listExits(self):
         return self.currentRoom.exits
     def build(self, worldName):
