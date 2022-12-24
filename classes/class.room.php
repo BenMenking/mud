@@ -17,7 +17,7 @@ class Room {
     public function temperature() { return isset($this->data['temperature'])?$this->data['temperature']:70; }
     public function isSpawn() { return isset($this->data['spawn']); }
     public function exits() { return $this->data['exits']; }
-    public function oxygenLevel() { return isset($this->data['oxygen-level'])?$this->data['oxygen-level']:100; }
+    public function oxygenLevel() { return isset($this->data['env']['oxygen_level'])?$this->data['oxygen_level']:100; }
     public function indoor() { return isset($this->data['env']['indoor'])?$this->data['env']['indoor']:false; }
     public function lightLevel() { return isset($this->data['light-level'])?$this->data['light-level']:50; }
     public function name() { return $this->data['name']; }
