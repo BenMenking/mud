@@ -2,9 +2,13 @@
 
 namespace Menking\Mud\Core;
 
+use Menking\Mud\Core\Event\ServerStartEvent;
+
 class Server {
     private $address, $port, $started;
     private $serverSocket, $bind, $running = false, $clients = [], $outgoing = [], $incoming = [];
+    private $world, $logins;
+    protected $handlers;
 
     public function __construct($listen_address, $listen_port) {
         $this->address = $listen_address;
@@ -17,11 +21,27 @@ class Server {
         }
     }
 
+    public function registerHandler(String $endpoint) {
+        $this->handlers[] = $endpoint;
+    }
+
+    public function deregisterHandler($endpoint) {
+        $key = array_search($endpoint, $this->handlers);
+
+        unset($this->handlers[$key]);
+    }
+
+    protected function sendEvent($event) {
+        foreach($this->handlers as $handler) {
+            $handler($event);
+        }
+    }
+
     /**
      * Causes the server to initialize
      * 
      */
-    public function connect() {
+    public function start() {
         $this->bind = @socket_bind($this->serverSocket, $this->address, $this->port);
 
         if( $this->bind === false ) {
@@ -34,16 +54,160 @@ class Server {
 
         $this->running = true;
         $this->started = time();
+
+        $this->sendEvent(new ServerStartEvent($this));
     }
 
-    public function close() {
+    /**
+     * Stop the server
+     * 
+     * Closes the server socket and related stuff @TODO
+     * - It should save each player and close each client socket with a nice message
+     */
+    public function stop() {
         @socket_close($this->serverSocket);
+    }
+
+    public function run() {
+        $this->world = World::getInstance($_ENV['SERVER_WORLD']);
+        //$this->logins = [];
+        $timer = microtime(true);
+
+        // game loop
+        while(true) {
+            // if we have data to write to a client, we need to add that client's socket to the $write
+            // and the socket_select() will tell us if we can write without blocking
+            //
+            foreach($this->world->getPlayers() as $player) {
+                while($player->hasMessages()) {
+                    $this->queueMessage($player->getTag('uuid'), $player->getMessage());
+                }
+            }
+
+            try {
+                $changes = $this->select();
+
+                foreach($changes as $type=>$change) {
+                    foreach($change as $uuid) {
+                        if( $type == 'new' ) {
+                            $logins[$uuid] = new Login($uuid);
+                            $this->queueMessage($uuid, $logins[$uuid]->begin());
+                        }
+                        else if( $type == 'data' ) {
+                            if( isset($logins[$uuid]) ) {
+                                $answer = $this->getNextMessage($uuid);
+
+                                if( strlen($answer) == 0 ) continue;
+
+                                $response = $logins[$uuid]->processAnswer($answer);
+                                if( $response['completed'] === true ) {
+                                    //$log->debug("Completed: true; " . json_encode($response));
+                                    if( $response['state'] == 'login-prompt' ) {
+                                        if( Player::exists($response['data']['login-prompt']) ) {
+                                            $this->queueMessage($uuid, $logins[$uuid]->begin('authenticate-user', true));
+                                        }
+                                        else {
+                                            $this->queueMessage($uuid, $logins[$uuid]->begin('start-registration', true));
+                                        }
+                                    }
+                                    else if( $response['state'] == 'authenticate-user') {
+                                        // log player in
+                                        try {
+                                            $p = Player::load($response['data']['login-prompt']);
+                                            if( $p->authenticate($response['data']['authenticate-user']) ) {
+                                                $p->addTag('uuid', $uuid);
+                                                $p->addCommand('look');
+                                                $this->world->addPlayer($p);
+                                                unset($logins[$uuid]);
+                                                //$log->info("[SERVER] Player {$p->name()} logged in");
+                                            }
+                                            else {
+                                                $this->queueMessage($uuid, $logins[$uuid]->begin());
+                                            }
+                                        }
+                                        catch(\Exception $e) {
+                                            $this->queueMessage($uuid, $logins[$uuid]->begin());
+                                        }
+                                    }
+                                    else if( $response['state'] == 'enter-email' ) {
+                                        //$log->warning("[SERVER] need to write new user implementation!");
+                                        // attempt to create new user
+                                        //$log->debug("response: " . json_encode($response['data']));
+                                        $p = Player::create($response['data']['login-prompt'],
+                                            $response['data']['select-race'],
+                                            [],
+                                            $response['data']['enter-password-1'],
+                                            $response['data']['enter-email'],
+                                            $this->world->getSpawn()
+                                        );
+                                        $p->addTag('uuid', $uuid);
+                                        $p->addCommand('look');
+                                        $this->world->addPlayer($p);
+
+                                        unset($logins[$uuid]);
+                                    }
+                                }
+                                else {
+                                    $this->queueMessage($uuid, $response['data']);
+                                }
+                            }
+                            else {
+                                $player = $this->world->getPlayerWithTag('uuid', $uuid);						
+                                
+                                if( !is_null($player) ) {
+                                    $command = $this->getNextMessage($uuid);
+
+                                    if( strlen($command) > 0 ) {
+                                        $player->addCommand($command);
+                                    }	
+                                }
+                                else {
+                                    //$log->info("[SERVER] Error: got a null player, UUID is $uuid\n");
+                                }
+                            }
+                        }
+                        else if( $type == 'disconnected' ) {
+                            if( isset($logins[$uuid]) ) {
+                                //$log->info("[SERVER] Client disconnected");
+                                unset($logins[$uuid]);
+                            }
+                            else {
+                                $player = $this->world->getPlayerWithTag('uuid', $uuid);
+                                $player->save();
+                                $this->world->removePlayer($player);
+                            }
+                        }
+                    }
+                }
+            }
+            catch(\Exception $e) {
+                //$log->emergency("[SERVER] Exception on select: " . $e->getMessage());
+                //die();
+                throw new \Exception($e->getMessage());
+            }
+            
+            //
+            // Let clients process commands and such
+            //
+            foreach($this->world->getPlayers() as $player) {
+                $status = $player->execute();
+            }
+
+            $en = microtime(true);
+            
+            if( $en - $timer > 10 ) {
+                //$log->info("[SERVER] There are " . number_format($world->countPlayers(), 0) . " players connected");
+                //$log->info("[SERVER] Current: " . number_format(round(memory_get_usage() / 1024), 0) . "MB\tPeak: " 
+                //    . number_format(round(memory_get_peak_usage() / 1024), 0) . "MB");
+                $timer = $en;
+            }
+        }
     }
 
     /**
      * Perform a socket select
      */
-    public function select($timeout = 5) {
+    protected function select($timeout = 5) {
         $results = ['new'=>[], 'data'=>[], 'disconnected'=>[]];
 
         $read[] = $this->serverSocket;
@@ -159,7 +323,7 @@ class Server {
         return $results;
     }
 
-    public function getNextMessage(int $clientSocket) {
+    protected function getNextMessage(int $clientSocket) {
         $message = '';
         $e = strpos($this->incoming[$clientSocket], "\r\n");
 
@@ -171,7 +335,7 @@ class Server {
         return trim($message);
     }
 
-    public function queueMessage(int $clientSocket, $txt) {
+    protected function queueMessage(int $clientSocket, $txt) {
         $this->outgoing[$clientSocket] .= $txt;
     }
 

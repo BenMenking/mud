@@ -2,6 +2,8 @@
 
 namespace Menking\Mud\Core;
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 use Menking\Mud\Core\Player;
 
 class World {
@@ -9,18 +11,24 @@ class World {
     private $rooms = [], $spawn_id;
     private $players = [], $mobs = [], $items = [];
     private static $instance = null;
+    private $log;
 
     private function __construct($name) {
+        $log = new Logger('World');
+        $log->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
+
         $file = 'worlds/' . strtolower($name) . '/' . strtolower($name) . '.json';
         $this->name = $name;
 
-        echo "** Loading world $name\n";
+        $log->info("Loading world $name");
 
         if( file_exists($file) ) {
             $data = json_decode(file_get_contents($file), true);
 
             if( is_null($data) ) {
-                echo "Unable to load world file for $name\n";
+                $log->error("Unable to load world file for $name");
+                
+                throw new \Exception("Unable to load world data");
             }
             else {
                 $this->name = $data['name'];
@@ -38,7 +46,7 @@ class World {
             throw new \Exception("World not found.");
         }
 
-        echo "** Loading items for $name\n";
+        $log->info("Loading items for $name");
 
         // load items
         //
@@ -53,16 +61,16 @@ class World {
                 $json = json_decode($data, true);
 
                 if( is_null($json) ) {
-                    echo "   Unable to load item '$obj'\n";
+                    $log->warning("Unable to load item '$obj'");
                 }
                 else {
-                    echo "   Loaded item '{$json['name']}'\n";
+                    $log->info("Loaded item '{$json['name']}'");
                     $this->items[$json['name']] = $json;
                 }
             }
         }
 
-        echo "** Loading mobiles for $name\n";
+        $log->info("Loading mobiles for $name");
 
         // load mobs
         //
@@ -77,16 +85,16 @@ class World {
                 $json = json_decode($data, true);
 
                 if( is_null($json) ) {
-                    echo "   Unable to load mob '$obj'\n";
+                    $log->warning("Unable to load mob '$obj'");
                 }
                 else {
-                    echo "   Loaded mob '{$json['name']}'\n";
+                    $log->info("Loaded mob '{$json['name']}'");
                     $this->mobs[$json['name']] = $json;
                 }
             }
         }
 
-        echo "*** Loading world {$this->name} complete\n";
+        $log->info("Loading world {$this->name} complete");
     }
     
     public static function getInstance($name) {
