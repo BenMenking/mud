@@ -2,31 +2,33 @@
 
 namespace Menking\Mud\Core;
 
-use Ramsey\Uuid\Uuid;
-
 class Server {
     private $address, $port, $started;
-    private $socket, $bind, $running = false, $clients = [], $outgoing = [], $incoming = [];
+    private $serverSocket, $bind, $running = false, $clients = [], $outgoing = [], $incoming = [];
 
     public function __construct($listen_address, $listen_port) {
         $this->address = $listen_address;
         $this->port = $listen_port;
 
-        $this->socket = @socket_create(AF_INET, SOCK_STREAM, 0);
+        $this->serverSocket = @socket_create(AF_INET, SOCK_STREAM, 0);
 
-        if( $this->socket === false ) {
+        if( $this->serverSocket === false ) {
             throw new \Exception(socket_strerror(socket_last_error()));
         }
     }
 
+    /**
+     * Causes the server to initialize
+     * 
+     */
     public function connect() {
-        $this->bind = @socket_bind($this->socket, $this->address, $this->port);
+        $this->bind = @socket_bind($this->serverSocket, $this->address, $this->port);
 
         if( $this->bind === false ) {
             throw new \Exception(socket_strerror(socket_last_error()));
         }
 
-        if( !socket_listen($this->socket) ) {
+        if( !socket_listen($this->serverSocket) ) {
             throw new \Exception(socket_strerror(socket_last_error()));
         }
 
@@ -35,7 +37,7 @@ class Server {
     }
 
     public function close() {
-        @socket_close($this->socket);
+        @socket_close($this->serverSocket);
     }
 
     /**
@@ -44,16 +46,16 @@ class Server {
     public function select($timeout = 5) {
         $results = ['new'=>[], 'data'=>[], 'disconnected'=>[]];
 
-        $read[] = $this->socket;
+        $read[] = $this->serverSocket;
         $read = array_merge($read, array_values($this->clients)); // always attempt to read from every client
         
         $write = [];
 
-        foreach($this->outgoing as $uuid=>$msg) {
+        foreach($this->outgoing as $clientSocket=>$msg) {
             // there is data in this socket's buffer to write out, so add them to the write list
             //
             if( strlen($msg) > 0 ) {
-                $write[] = $this->clients[$uuid];
+                $write[] = $this->clients[$clientSocket];
             }
         }
         $except = [];
@@ -68,17 +70,17 @@ class Server {
         if( $changed > 0 ) {
             // check for a read on server's socket.  new connection
             //
-            if( !empty($read) && in_array($this->socket, $read) ) {
-                $c = socket_accept($this->socket);
-                $uuid = Uuid::uuid5(Uuid::NAMESPACE_X500, (string)($c . time()))->toString();
-                $this->clients[$uuid] = $c;
-                $this->outgoing[$uuid] = '';
-                $this->incoming[$uuid] = '';
-                $results['new'][] = $uuid;
+            if( !empty($read) && in_array($this->serverSocket, $read) ) {
+                $c = socket_accept($this->serverSocket);
+                $objId = spl_object_id($c);
+                $this->clients[$objId] = $c;
+                $this->outgoing[$objId] = '';
+                $this->incoming[$objId] = '';
+                $results['new'][] = $objId;
 
                 // need to remove $server_sock from $read, otherwise this will cause issues
                 // later in the code
-                $key = array_search($this->socket, $read);
+                $key = array_search($this->serverSocket, $read);
                 unset($read[$key]);
             }
         }
@@ -87,37 +89,46 @@ class Server {
 		//
 		if( !empty($read) ) {
 			foreach($read as $read_sock) {
-                $uuid = array_search($read_sock, $this->clients);
-                $data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
+                $objId = spl_object_id($read_sock);
+                                
+                //$clientSocket = array_search(spl_object_id($read_sock), $this->clients);
+                //$data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
 
-				if( $data === false ) {
-                    // client disconnected, cleanup
-                    socket_close($this->clients[$uuid]);
-                    unset($this->clients[$uuid]);
-                    $results['disconnected'][] = $uuid;
-				}
-				else {
-                    $message = '';
+                if( isset($this->clients[$objId]) ) {
+                    $data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
 
-                    for($a = 0; $a < strlen($data); ) {
-    
-                        if( ord($data[$a]) == 0xff && ord($data[$a+1]) == 0xff ) {
-                            // special case where 0xFF is padded
-                            $message .= ord(0xFF);
-                            $a += 2;
-                        }
-                        else if( ord($data[$a]) == 0xff ) {
-                            $a += 3;
-                        }
-                        else {
-                            $message .= ($data[$a]);
-                            $a++;
-                        }
+                    if( $data === false ) {
+                        // client disconnected, cleanup
+                        socket_close($this->clients[$objId]);
+                        unset($this->clients[$objId]);
+                        $results['disconnected'][] = $objId;
                     }
-            
-                    $this->incoming[$uuid] .= $message;
-                    $results['data'][] = $uuid;
-				}
+                    else {
+                        $message = '';
+
+                        for($a = 0; $a < strlen($data); ) {
+        
+                            if( ord($data[$a]) == 0xff && ord($data[$a+1]) == 0xff ) {
+                                // special case where 0xFF is padded
+                                $message .= ord(0xFF);
+                                $a += 2;
+                            }
+                            else if( ord($data[$a]) == 0xff ) {
+                                $a += 3;
+                            }
+                            else {
+                                $message .= ($data[$a]);
+                                $a++;
+                            }
+                        }
+                
+                        $this->incoming[$objId] .= $message;
+                        $results['data'][] = $clientSocket;
+                    }
+                }
+                else {
+                    echo "Got read_sock but don't have that Socket registered!\n";
+                }
 			}
 		}
         
@@ -125,35 +136,43 @@ class Server {
         //
 		if( !empty($write) && count($write) > 0 ) {
 			foreach($write as $write_sock) {
-                $uuid = array_search($write_sock, $this->clients);
+                                //$clientSocket = array_search($write_sock, $this->clients);
                 
-                // write as many bytes as possible to socket.  the write may not send 
-                // all the bytes in the buffer at once, so we send what we can and save
-                // the rest when this gets called again
-                $bytes_written = @socket_write($write_sock, $this->outgoing[$uuid]);
-                
-                // now truncate $bytes_written from the buffer
-                $this->outgoing[$uuid] = substr($this->outgoing[$uuid], $bytes_written);
+                $objId = spl_object_id($write_sock);
+
+                if( isset($this->clients[$objId]) ) {
+                    // write as many bytes as possible to socket.  the write may not send 
+                    // all the bytes in the buffer at once, so we send what we can and save
+                    // the rest when this gets called again
+                    $bytes_written = @socket_write($write_sock, $this->outgoing[$clientSocket]);
+                    
+                    // now truncate $bytes_written from the buffer
+                    $this->outgoing[$clientSocket] = substr($this->outgoing[$clientSocket], $bytes_written);
+                }
+                else {
+                    echo "Got write_sock but don't have that Socket registered!\n";
+                }
+
 			}
         }
         
         return $results;
     }
 
-    public function getNextMessage($uuid) {
+    public function getNextMessage(int $clientSocket) {
         $message = '';
-        $e = strpos($this->incoming[$uuid], "\r\n");
+        $e = strpos($this->incoming[$clientSocket], "\r\n");
 
         if($e !== false) {
-            $message = trim(substr($this->incoming[$uuid], 0, $e));
-            $this->incoming[$uuid] = substr($this->incoming[$uuid], $e+1);
+            $message = trim(substr($this->incoming[$clientSocket], 0, $e));
+            $this->incoming[$clientSocket] = substr($this->incoming[$clientSocket], $e+1);
         }
 
         return trim($message);
     }
 
-    public function queueMessage($uuid, $txt) {
-        $this->outgoing[$uuid] .= $txt;
+    public function queueMessage(int $clientSocket, $txt) {
+        $this->outgoing[$clientSocket] .= $txt;
     }
 
     public function running() { return $this->running; }

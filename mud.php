@@ -10,7 +10,6 @@ use Menking\Mud\Core\World;
 date_default_timezone_set('America/New_York');
 
 require_once('vendor/autoload.php');
-require_once('classes/autoload.php');
 
 $log = new Logger('Core');
 $log->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
