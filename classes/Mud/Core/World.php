@@ -1,5 +1,9 @@
 <?php
 
+namespace Menking\Mud\Core;
+
+use Menking\Mud\Core\Player;
+
 class World {
     private $name;
     private $rooms = [], $spawn_id;
@@ -31,7 +35,7 @@ class World {
             }
         }
         else {
-            throw new Exception("World not found.");
+            throw new \Exception("World not found.");
         }
 
         echo "** Loading items for $name\n";
@@ -166,9 +170,4 @@ class World {
         print_r($this->rooms);
         return $this->rooms[$id];
     }
-}
-
-class Area {
-    private $world;
-    private $rooms = [];
 }

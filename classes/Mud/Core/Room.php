@@ -1,5 +1,7 @@
 <?php
 
+namespace Menking\Mud\Core;
+
 class Room {
     private $data, $world;
 

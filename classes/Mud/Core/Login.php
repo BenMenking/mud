@@ -1,5 +1,7 @@
 <?php
 
+namespace Menking\Mud\Core;
+
 class Login {
     private $uuid, $state, $data;
     private $questions, $answers = [];

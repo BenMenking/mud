@@ -1,11 +1,13 @@
 <?php
 
+namespace Menking\Mud\Core;
+
 class Item {
     private $volume, $weight;
     private $type, $group, $name;
 
     private function __construct($name) {
-        $file = "items/" . $this->pathify($name) . ".json";
+        $file = "items/" . Item::pathify($name) . ".json";
 
         echo "Attempting to load item in '$file'\n";
         $data = json_decode(file_get_contents($file), true);
@@ -34,12 +36,16 @@ class Item {
     public function weight() { return $this->weight; }
     public function type() { return $this->type; }
     public function group() { return $this->group; }
-}
 
-class ItemGroup {
-    const GROUP_WEAPON = "weapon";
-    const GROUP_CONSUMABLE = "consumable";
-    const GROUP_ARMOR = "armor";
-    const GROUP_SHIELD = "shield";
-
+    private static function pathify($file) {
+        /** https://stackoverflow.com/a/2021729/4508285 */
+        // Remove anything which isn't a word, whitespace, number
+        // or any of the following caracters -_~,;[]().
+        // If you don't need to handle multi-byte characters
+        // you can use preg_replace rather than mb_ereg_replace
+        // Thanks @Łukasz Rysiak!
+        $file = mb_ereg_replace("([^\w\s\d\-_~,;\[\]\(\).])", '', strtolower($file));
+        // Remove any runs of periods (thanks falstro!)
+        return mb_ereg_replace("([\.]{2,})", '', $file);        
+    }    
 }

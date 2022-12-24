@@ -1,5 +1,7 @@
 <?php
 
+namespace Menking\Mud\Core;
+
 class Questions {
     private $questions;
 

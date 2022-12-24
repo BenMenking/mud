@@ -1,5 +1,7 @@
 <?php
 
+namespace Menking\Mud\Core;
+
 use Ramsey\Uuid\Uuid;
 
 class Server {
@@ -13,7 +15,7 @@ class Server {
         $this->socket = @socket_create(AF_INET, SOCK_STREAM, 0);
 
         if( $this->socket === false ) {
-            throw new Exception(socket_strerror(socket_last_error()));
+            throw new \Exception(socket_strerror(socket_last_error()));
         }
     }
 
@@ -21,11 +23,11 @@ class Server {
         $this->bind = @socket_bind($this->socket, $this->address, $this->port);
 
         if( $this->bind === false ) {
-            throw new Exception(socket_strerror(socket_last_error()));
+            throw new \Exception(socket_strerror(socket_last_error()));
         }
 
         if( !socket_listen($this->socket) ) {
-            throw new Exception(socket_strerror(socket_last_error()));
+            throw new \Exception(socket_strerror(socket_last_error()));
         }
 
         $this->running = true;
@@ -60,7 +62,7 @@ class Server {
 
         if( $changed === false ) {
             $this->running = false;
-            throw new Exception(socket_strerror(socket_last_error()));
+            throw new \Exception(socket_strerror(socket_last_error()));
         }
 
         if( $changed > 0 ) {

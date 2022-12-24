@@ -1,6 +1,11 @@
 <?php
 
+namespace Menking\Mud\Core;
+
 use Ramsey\Uuid\Uuid;
+use Menking\Mud\States\StandingState;
+use Menking\Mud\Core\Item;
+use Menking\Mud\Command\CommandFactory;
 
 class Player {
     // volatile variables that do not get permanently recorded
@@ -117,7 +122,7 @@ class Player {
             return $instance;
         }
         else {
-            throw new Exception('Players does not exist');
+            throw new \Exception('Players does not exist');
         }
     }
 
@@ -221,128 +226,4 @@ class Player {
     }
 
 
-}
-
-class PlayerStates {
-    public $name;
-
-    public function perform(Command $command) { }
-}
-
-class FightingState extends PlayerStates {
-    public function __construct() {
-        $this->name = "fighting";
-    }
-
-    public function perform(Command $command) {
-        parent::perform($command);
-
-        switch(true) {
-            case $command instanceof LookCommand:
-            case $command instanceof MoveCommand:
-            case $command instanceof WhoCommand:
-            case $command instanceof CommCommand:
-            case $command instanceof StandCommand:
-            case $command instanceof InventoryCommand:
-            case $command instanceof ItemActionCommand:
-            case $command instanceof ExitsCommand:
-                return $command->perform();
-            break;
-            default:
-                return "You cannot perform that action while fighting\r\n";
-        }
-    }
-}
-
-class StandingState extends PlayerStates {
-    public function __construct() {
-        $this->name = "standing";
-    }
-    
-    public function perform(Command $command) {
-        parent::perform($command);
-
-        switch(true) {
-            case $command instanceof LookCommand:
-            case $command instanceof MoveCommand:
-            case $command instanceof WhoCommand:
-            case $command instanceof CommCommand:
-            case $command instanceof RestCommand:
-            case $command instanceof SleepCommand:
-            case $command instanceof InventoryCommand:
-            case $command instanceof ItemActionCommand:
-            case $command instanceof ExitsCommand:                
-                return $command->perform();
-            break;
-            default:
-                return "You cannot perform that action while standing\r\n";
-        }
-    }
-}
-
-class RestState extends PlayerStates {
-    public function __construct() {
-        $this->name = "resting";
-    }
-    
-    public function perform(Command $command) {
-        parent::perform($command);
-
-        switch(true) {
-            case $command instanceof LookCommand:
-            case $command instanceof WhoCommand:
-            case $command instanceof CommCommand:
-            case $command instanceof StandCommand:
-            case $command instanceof SleepCommand:
-            case $command instanceof InventoryCommand:
-            case $command instanceof ItemActionCommand:
-            case $command instanceof ExitsCommand:
-                return $command->perform();
-            break;
-            default:
-                return "You cannot perform that action while resting\r\n";
-        }
-    }
-}
-
-class SleepState extends PlayerStates {
-    public function __construct() {
-        $this->name = "sleeping";
-    }
-    
-    public function perform(Command $command) {
-        parent::perform($command);
-
-        switch(true) {
-            case $command instanceof WhoCommand:
-            case $command instanceof CommCommand:
-            case $command instanceof StandCommand:
-            case $command instanceof RestCommand:
-            case $command instanceof InventoryCommand:
-                return $command->perform();
-            break;
-            default:
-                return "You cannot perform that action while sleeping\r\n";
-        }
-    }
-}
-
-class IncapacitatedState extends PlayerStates {
-    public function __construct() {
-        $this->name = "incapacitated";
-    }
-    
-    public function perform(Command $command) {
-        parent::perform($command);
-
-        switch(true) {
-            case $command instanceof LookCommand:
-            case $command instanceof WhoCommand:
-            case $command instanceof CommCommand:
-                $command->perform();
-            break;
-            default:
-                return "You cannot perform that action while incapacitated\r\n";
-        }
-    }
 }

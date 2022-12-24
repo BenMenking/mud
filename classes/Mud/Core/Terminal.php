@@ -1,5 +1,7 @@
 <?php
 
+namespace Menking\Mud\Core;
+
 class Terminal {
     const BLACK = "\033[30m";
     const RED = "\033[31m";
@@ -23,4 +25,3 @@ class Terminal {
     const UNDERLINE = "\033[4m";
     const REVERSED = "\033[7m";
 }
-?>
