@@ -1,0 +1,45 @@
+{
+    "name": "A dirty dog",
+    "description": "A filthy scoundrel of a dog.  Eyes you hungrily.",
+    "names": [
+        "dog",
+        "dirty"
+    ],
+    "extra": {
+
+    },
+    "worn": {
+        "head": "",
+        "left_ear": "",
+        "right_ear": "",
+        "neck": "",
+        "shoulders": "",
+        "left_arm": "",
+        "right_arm": "",
+        "left_finger": "",
+        "right_finger": "",
+        "chest": "",
+        "waist": "",
+        "legs": "",
+        "feet": ""
+    },
+    "held": {},
+    "weight": 40,
+    "capacity": 10,
+    "hit": 150,
+    "mana": 0,
+    "experience": 1,
+    "gender": "male",
+    "height": 36,
+    "race": "animal",
+    "attack": 5,
+    "armor": 0,
+    "speed": 10,
+    "position": "standing",
+    "default-position": "standing",
+    "ability": 0,
+    "weapon": 0,
+    "spell": 0,
+    "light": 0,
+    "alignment": 0
+}

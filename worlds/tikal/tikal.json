@@ -1,66 +1,72 @@
 {
     "name": "Tikal",
-    "rooms": [
+    "areas": [
         {
-            "id": "tikal-grand_lobby",
-            "name": "Grand Lobby",
-            "spawn": "true",
-            "description": "A large, ornate lobby extending upwards into an unknown fog.  The small crystalized window panes set into the stonework let in the perfect amount of light.",
-            "exits": {
-                "south": {
-                    "target": "tikal-training_entrance",
-                    "description": "An entrance to the training grounds.",
-                    "flag": "unrestricted",
-                    "keywords": [],
-                    "key-name": "",
-                    "extras": [
+            "name": "The City",
+            "default": true,
+            "rooms": [
+                {
+                    "id": "tikal-grand_lobby",
+                    "name": "Grand Lobby",
+                    "spawn": "true",
+                    "description": "A large, ornate lobby extending upwards into an unknown fog.  The small crystalized window panes set into the stonework let in the perfect amount of light.",
+                    "exits": {
+                        "south": {
+                            "target": "tikal-training_entrance",
+                            "description": "An entrance to the training grounds.",
+                            "flag": "unrestricted",
+                            "keywords": [],
+                            "key-name": "",
+                            "extras": [
 
-                    ]
-                }
-            },
-            "temperature": 72,
-            "oxygen_level": 100,
-            "light_level": 50,
-            "env": ["nomob", "indoors", "peaceful", "nomagic"],
-            "terrain": "indoor"
-        },
-        {
-            "id": "tikal-training_entrance",
-            "name": "Training Entrance",
-            "description": "An iron-gated entrance lying in a strange mist.",
-            "exits": {
-                "north": {
-                    "target": "tikal-grand_lobby"
+                            ]
+                        }
+                    },
+                    "temperature": 72,
+                    "oxygen_level": 100,
+                    "light_level": 50,
+                    "env": ["nomob", "indoors", "peaceful", "nomagic"],
+                    "terrain": "indoor"
                 },
-                "south": {
-                    "target": "tikal-training_room",
-                    "requires": {
-                        "attribute": "level",
-                        "operator": "<",
-                        "value": "5"
-                    }
-                }
-            },
-            "temperature": 68,
-            "oxygen_level": 100,
-            "light_level": 50,
-            "env": [],
-            "terrain": "city"
-        },
-        {
-            "id": "tikal-training_room",
-            "name": "Training Room",
-            "description": "A.",
-            "exits": {
-                "north": {
-                    "target": "tikal-training_entrance"
-                }
-            },
-            "temperature": 68,
-            "oxygen_level": 100,
-            "light_level": 50,
-            "env": [],
-            "terrain": "city"
-        }        
+                {
+                    "id": "tikal-training_entrance",
+                    "name": "Training Entrance",
+                    "description": "An iron-gated entrance lying in a strange mist.",
+                    "exits": {
+                        "north": {
+                            "target": "tikal-grand_lobby"
+                        },
+                        "south": {
+                            "target": "tikal-training_room",
+                            "requires": {
+                                "attribute": "level",
+                                "operator": "<",
+                                "value": "5"
+                            }
+                        }
+                    },
+                    "temperature": 68,
+                    "oxygen_level": 100,
+                    "light_level": 50,
+                    "env": [],
+                    "terrain": "city"
+                },
+                {
+                    "id": "tikal-training_room",
+                    "name": "Training Room",
+                    "description": "A.",
+                    "exits": {
+                        "north": {
+                            "target": "tikal-training_entrance"
+                        }
+                    },
+                    "temperature": 68,
+                    "oxygen_level": 100,
+                    "light_level": 50,
+                    "env": [],
+                    "terrain": "city"
+                }    
+            ]   
+        }
     ]
 }

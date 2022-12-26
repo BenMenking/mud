@@ -7,6 +7,8 @@ use Menking\Mud\Core\Login;
 use Menking\Mud\Core\Server;
 use Menking\Mud\Core\World;
 use Menking\Mud\Core\Event\Event;
+use Menking\Mud\Core\Event\ServerStartEvent;
+use Menking\Mud\Core\Event\PlayerLoginEvent;
 
 date_default_timezone_set('America/New_York');
 
@@ -36,13 +38,14 @@ catch(Exception $e) {
 
 function event_handler(Event $event) {
 	global $log;
-	
-	switch($event->type) {
-		case Event::SERVER_START_EVENT:
-			$log->info("Server started on {$event->server->ip()}:{$event->server->port()}");
-			break;
-		default:
-			echo "Got unknown event: " . $event->type . "\n";
 
+	if( $event instanceof ServerStartEvent) {
+		$log->info("Server started on {$event->server->ip()}:{$event->server->port()}");
+	}
+	else if( $event instanceof PlayerLoginEvent) {
+		$log->info("Player {$event->player->name()} logged in");
+	}
+	else {
+		$log->warning("Got an unknown event: " . $event::class);
 	}
 }

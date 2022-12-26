@@ -3,13 +3,14 @@
 namespace Menking\Mud\Core;
 
 class Room {
-    private $data, $world;
+    private $data, $world, $area;
 
-    public static function load($data, $world) {
+    public static function load($data, $world, $area) {
         $room = new self();
 
         $room->data = $data;
         $room->world = $world;
+        $room->area = $area;
 
         return $room;
     }
@@ -34,6 +35,7 @@ class Room {
     public function private() { return isset($this->data['env']['private'])?$this->data['env']['private']:false; }
     public function adminOnly() { return isset($this->data['env']['admin_only'])?$this->data['env']['admin_only']:false; }
     public function terrain() { return $this->data['terrain']; }
+    public function getArea() { return $this->area; }
 
     public function __toString() {
         return json_encode($this->data, JSON_PRETTY_PRINT);

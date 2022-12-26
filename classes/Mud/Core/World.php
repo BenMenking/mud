@@ -8,36 +8,40 @@ use Menking\Mud\Core\Player;
 
 class World {
     private $name;
-    private $rooms = [], $spawn_id;
+    private $areas = [], $rooms = [], $spawn_id;
     private $players = [], $mobs = [], $items = [];
     private static $instance = null;
     private $log;
 
     private function __construct($name) {
-        $log = new Logger('World');
-        $log->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
+        $this->log = new Logger('World');
+        $this->log->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
 
         $file = 'worlds/' . strtolower($name) . '/' . strtolower($name) . '.json';
-        $this->name = $name;
+        //$this->name = $name;
 
-        $log->info("Loading world $name");
+        $this->log->info("Loading world $name");
 
         if( file_exists($file) ) {
             $data = json_decode(file_get_contents($file), true);
 
             if( is_null($data) ) {
-                $log->error("Unable to load world file for $name");
+                $this->log->error("Unable to load world file for $name");
                 
                 throw new \Exception("Unable to load world data");
             }
             else {
                 $this->name = $data['name'];
 
-                foreach($data['rooms'] as $room) {
-                    $this->rooms[$room['id']] = Room::load($room, $this);
+                foreach($data['areas'] as $area) { 
+                    $this->area[] = $area;
 
-                    if( isset($room['spawn']) && $room['spawn'] ) {
-                        $this->spawn_id = $room['id'];
+                    foreach($data['rooms'] as $room) {
+                        $this->rooms[$room['id']] = Room::load($room, $this, $area);
+
+                        if( isset($room['spawn']) && $room['spawn'] ) {
+                            $this->spawn_id = $room['id'];
+                        }
                     }
                 }
             }
@@ -46,7 +50,7 @@ class World {
             throw new \Exception("World not found.");
         }
 
-        $log->info("Loading items for $name");
+        $this->log->info("Loading items for $name");
 
         // load items
         //
@@ -61,16 +65,16 @@ class World {
                 $json = json_decode($data, true);
 
                 if( is_null($json) ) {
-                    $log->warning("Unable to load item '$obj'");
+                    $this->log->warning("Unable to load item '$obj'");
                 }
                 else {
-                    $log->info("Loaded item '{$json['name']}'");
+                    $this->log->info("Loaded item '{$json['name']}'");
                     $this->items[$json['name']] = $json;
                 }
             }
         }
 
-        $log->info("Loading mobiles for $name");
+        $this->log->info("Loading mobiles for $name");
 
         // load mobs
         //
@@ -85,16 +89,16 @@ class World {
                 $json = json_decode($data, true);
 
                 if( is_null($json) ) {
-                    $log->warning("Unable to load mob '$obj'");
+                    $this->log->warning("Unable to load mob '$obj'");
                 }
                 else {
-                    $log->info("Loaded mob '{$json['name']}'");
+                    $this->log->info("Loaded mob '{$json['name']}'");
                     $this->mobs[$json['name']] = $json;
                 }
             }
         }
 
-        $log->info("Loading world {$this->name} complete");
+        $this->log->info("Loading world {$this->name} complete");
     }
     
     public static function getInstance($name) {
@@ -175,7 +179,7 @@ class World {
     }
 
     public function getRoom($id) {
-        print_r($this->rooms);
+        //print_r($this->rooms);
         return $this->rooms[$id];
     }
 }

@@ -2,15 +2,30 @@
 
 namespace Menking\Mud\Core;
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 use Menking\Mud\Core\Event\ServerStartEvent;
+use Menking\Mud\Core\Event\PlayerLoginEvent;
+use Menking\Mud\Core\Event\PlayerLogoffEvent;
+use Menking\Mud\Core\Event\ServerStoppedEvent;
+use Menking\Mud\Core\Event\ServerStoppingEvent;
+use Menking\Mud\Core\Event\ServerStartingEvent;
+use Menking\Mud\Core\Event\ServerTickEvent;
+
 
 class Server {
     private $address, $port, $started;
     private $serverSocket, $bind, $running = false, $clients = [], $outgoing = [], $incoming = [];
-    private $world, $logins;
+    public $world;
     protected $handlers;
+    private $log;
+    private $tick_msec = 100;
+    private $tick = 1;
 
     public function __construct($listen_address, $listen_port) {
+        $this->log = new Logger('Server');
+        $this->log->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
+
         $this->address = $listen_address;
         $this->port = $listen_port;
 
@@ -21,16 +36,31 @@ class Server {
         }
     }
 
-    public function registerHandler(String $endpoint) {
-        $this->handlers[] = $endpoint;
+    /**
+     * Registers a new event handler
+     * 
+     * @param string $callback  The callback name to send events to.
+     */
+    public function registerHandler(String $callback) {
+        $this->handlers[] = $callback;
     }
 
-    public function deregisterHandler($endpoint) {
-        $key = array_search($endpoint, $this->handlers);
+    /**
+     * Removes a previously installed event handler from the event handler group.
+     * 
+     * @param string $callback  The callback name to send events to.
+     */
+    public function deregisterHandler($callback) {
+        $key = array_search($callback, $this->handlers);
 
         unset($this->handlers[$key]);
     }
 
+    /**
+     * Protected function used to send events to registered event handlers
+     * 
+     * @param Event $event  The event object
+     */
     protected function sendEvent($event) {
         foreach($this->handlers as $handler) {
             $handler($event);
@@ -42,6 +72,8 @@ class Server {
      * 
      */
     public function start() {
+        $this->sendEvent(new ServerStartingEvent($this));
+
         $this->bind = @socket_bind($this->serverSocket, $this->address, $this->port);
 
         if( $this->bind === false ) {
@@ -55,6 +87,8 @@ class Server {
         $this->running = true;
         $this->started = time();
 
+        $this->world = World::getInstance($_ENV['SERVER_WORLD']);
+
         $this->sendEvent(new ServerStartEvent($this));
     }
 
@@ -65,16 +99,25 @@ class Server {
      * - It should save each player and close each client socket with a nice message
      */
     public function stop() {
+        $this->sendEvent(new ServerStoppingEvent($this));
         @socket_close($this->serverSocket);
+        $this->sendEvent(new ServerStoppedEvent($this));
     }
 
     public function run() {
-        $this->world = World::getInstance($_ENV['SERVER_WORLD']);
-        //$this->logins = [];
-        $timer = microtime(true);
+        $logins = [];
 
         // game loop
         while(true) {
+            $mark = hrtime(true);
+        
+            // we have 100 msecs to:
+            // - reeive socket data
+            // - perform commands
+            // - mob actions
+            // - send data
+
+
             // if we have data to write to a client, we need to add that client's socket to the $write
             // and the socket_select() will tell us if we can write without blocking
             //
@@ -85,7 +128,7 @@ class Server {
             }
 
             try {
-                $changes = $this->select();
+                $changes = $this->select(0);
 
                 foreach($changes as $type=>$change) {
                     foreach($change as $uuid) {
@@ -101,7 +144,7 @@ class Server {
 
                                 $response = $logins[$uuid]->processAnswer($answer);
                                 if( $response['completed'] === true ) {
-                                    //$log->debug("Completed: true; " . json_encode($response));
+                                    $this->log->debug("Completed: true; " . json_encode($response));
                                     if( $response['state'] == 'login-prompt' ) {
                                         if( Player::exists($response['data']['login-prompt']) ) {
                                             $this->queueMessage($uuid, $logins[$uuid]->begin('authenticate-user', true));
@@ -119,7 +162,9 @@ class Server {
                                                 $p->addCommand('look');
                                                 $this->world->addPlayer($p);
                                                 unset($logins[$uuid]);
-                                                //$log->info("[SERVER] Player {$p->name()} logged in");
+                                                $this->log->info("[SERVER] Player {$p->name()} logged in");
+
+                                                $this->sendEvent(new PlayerLoginEvent($p));
                                             }
                                             else {
                                                 $this->queueMessage($uuid, $logins[$uuid]->begin());
@@ -130,9 +175,9 @@ class Server {
                                         }
                                     }
                                     else if( $response['state'] == 'enter-email' ) {
-                                        //$log->warning("[SERVER] need to write new user implementation!");
+                                        $this->log->warning("[SERVER] need to write new user implementation!");
                                         // attempt to create new user
-                                        //$log->debug("response: " . json_encode($response['data']));
+                                        $this->log->debug("response: " . json_encode($response['data']));
                                         $p = Player::create($response['data']['login-prompt'],
                                             $response['data']['select-race'],
                                             [],
@@ -162,26 +207,27 @@ class Server {
                                     }	
                                 }
                                 else {
-                                    //$log->info("[SERVER] Error: got a null player, UUID is $uuid\n");
+                                    $this->log->info("[SERVER] Error: got a null player, UUID is $uuid\n");
                                 }
                             }
                         }
                         else if( $type == 'disconnected' ) {
                             if( isset($logins[$uuid]) ) {
-                                //$log->info("[SERVER] Client disconnected");
+                                $this->log->info("[SERVER] Client disconnected");
                                 unset($logins[$uuid]);
                             }
                             else {
                                 $player = $this->world->getPlayerWithTag('uuid', $uuid);
                                 $player->save();
                                 $this->world->removePlayer($player);
+                                $this->sendEvent(new PlayerLogoffEvent($player));
                             }
                         }
                     }
                 }
             }
             catch(\Exception $e) {
-                //$log->emergency("[SERVER] Exception on select: " . $e->getMessage());
+                $this->log->emergency("[SERVER] Exception on select: " . $e->getMessage());
                 //die();
                 throw new \Exception($e->getMessage());
             }
@@ -193,14 +239,30 @@ class Server {
                 $status = $player->execute();
             }
 
+            // process mob actions
+            //
+
+            /*
             $en = microtime(true);
             
             if( $en - $timer > 10 ) {
-                //$log->info("[SERVER] There are " . number_format($world->countPlayers(), 0) . " players connected");
-                //$log->info("[SERVER] Current: " . number_format(round(memory_get_usage() / 1024), 0) . "MB\tPeak: " 
-                //    . number_format(round(memory_get_peak_usage() / 1024), 0) . "MB");
+                $this->log->info("[SERVER] There are " . number_format($this->world->countPlayers(), 0) . " players connected");
+                $this->log->info("[SERVER] Current: " . number_format(round(memory_get_usage() / 1024), 0) . "MB\tPeak: " 
+                    . number_format(round(memory_get_peak_usage() / 1024), 0) . "MB");
                 $timer = $en;
             }
+            */
+            $t = hrtime(true);
+
+            if( $t - $mark > (1000000 * 100) ) {
+                $this->log->info("Server tick");
+                $this->tick++;
+                $mark = $t;
+                $this->sendEvent(new ServerTickEvent($this));
+            }
+
+            //echo "nanoseconds: " . number_format($mark - $this->started, 0) . "\n";
+            //$this->started = $mark;
         }
     }
 
@@ -234,7 +296,7 @@ class Server {
         if( $changed > 0 ) {
             // check for a read on server's socket.  new connection
             //
-            if( !empty($read) && in_array($this->serverSocket, $read) ) {
+            if( in_array($this->serverSocket, $read) ) {
                 $c = socket_accept($this->serverSocket);
                 $objId = spl_object_id($c);
                 $this->clients[$objId] = $c;
@@ -254,9 +316,6 @@ class Server {
 		if( !empty($read) ) {
 			foreach($read as $read_sock) {
                 $objId = spl_object_id($read_sock);
-                                
-                //$clientSocket = array_search(spl_object_id($read_sock), $this->clients);
-                //$data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
 
                 if( isset($this->clients[$objId]) ) {
                     $data = @socket_read($read_sock, 1024, PHP_NORMAL_READ);
@@ -287,7 +346,7 @@ class Server {
                         }
                 
                         $this->incoming[$objId] .= $message;
-                        $results['data'][] = $clientSocket;
+                        $results['data'][] = $objId;
                     }
                 }
                 else {
@@ -300,18 +359,17 @@ class Server {
         //
 		if( !empty($write) && count($write) > 0 ) {
 			foreach($write as $write_sock) {
-                                //$clientSocket = array_search($write_sock, $this->clients);
-                
+
                 $objId = spl_object_id($write_sock);
 
                 if( isset($this->clients[$objId]) ) {
                     // write as many bytes as possible to socket.  the write may not send 
                     // all the bytes in the buffer at once, so we send what we can and save
                     // the rest when this gets called again
-                    $bytes_written = @socket_write($write_sock, $this->outgoing[$clientSocket]);
+                    $bytes_written = @socket_write($write_sock, $this->outgoing[$objId]);
                     
                     // now truncate $bytes_written from the buffer
-                    $this->outgoing[$clientSocket] = substr($this->outgoing[$clientSocket], $bytes_written);
+                    $this->outgoing[$objId] = substr($this->outgoing[$objId], $bytes_written);
                 }
                 else {
                     echo "Got write_sock but don't have that Socket registered!\n";
@@ -342,5 +400,6 @@ class Server {
     public function running() { return $this->running; }
     public function ip() { return $this->address; }
     public function port() { return $this->port; }
+    public function startedAt() { return $this->started; }
       
 }

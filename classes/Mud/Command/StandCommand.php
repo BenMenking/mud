@@ -2,6 +2,8 @@
 
 namespace Menking\Mud\Command;
 
+use Menking\Mud\States\StandingState;
+
 class StandCommand extends Command {
     public function perform() {
         parent::perform();
