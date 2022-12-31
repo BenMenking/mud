@@ -10,7 +10,7 @@ class LookCommand extends Command {
 
         $things = [];
 
-        foreach($this->player->room()->getWorld()->playersInRoom($this->player->room()) as $resident) {
+        foreach($this->player->room()->area()->playersInRoom($this->player->room()) as $resident) {
             if( $resident != $this->player ) {
                 $things[] = "{$resident->name()} is {$resident->state->name} here.";
             }

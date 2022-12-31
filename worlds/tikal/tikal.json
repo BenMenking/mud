@@ -2,6 +2,7 @@
     "name": "Tikal",
     "areas": [
         {
+            "id": "tikal_the_city_area",
             "name": "The City",
             "default": true,
             "rooms": [

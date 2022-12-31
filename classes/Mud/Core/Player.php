@@ -11,6 +11,7 @@ class Player {
     // volatile variables that do not get permanently recorded
     public $state, $authenticated = false, $messages = [];
     private $room, $tags, $commands = [];
+    private $socketId = null;
 
     // non-volatile variables that get saved to Player record
     protected $meta, $playerfile;
@@ -50,6 +51,14 @@ class Player {
 
     public function removeTag($key) {
         if( isset($this->tags[$key]) ) unset($this->tags[$key]);
+    }
+
+    public function setSocketId($socket) {
+        $this->socketId = $socket;
+    }
+
+    public function getSocketId() {
+        return $this->socketId;
     }
 
     public function execute($show_prompt = true) {
@@ -117,8 +126,10 @@ class Player {
             $instance->playerfile = $file;
             $instance->state = new StandingState();
 
+            // we need to place the player in a room.  if their player data files doesn't contain
+            // a last location, we pick the default for the World
             $world = World::getInstance($_ENV['SERVER_WORLD']);
-            $instance->room = $world->getRoom($instance->meta['room']);
+            $instance->room = $world->getSpawnRoom($instance->meta['room']);
             return $instance;
         }
         else {
@@ -129,7 +140,7 @@ class Player {
     public function setRoom(Room $room) {
         $this->room = $room;
         $this->meta['room'] = $room->id();
-        $this->meta['world'] = $room->getWorld()->name();
+        //$this->meta['world'] = $room->getWorld()->name();
     }
 
     public function save() {
@@ -195,6 +206,7 @@ class Player {
         return $instance;
     }
 
+    public function id() { return $this->meta['id']; }
     public function name() { return $this->meta['name']; }
     public function class() { return $this->meta['class']; }
     public function race() { return $this->meta['race']; }

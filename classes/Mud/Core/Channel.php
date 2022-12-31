@@ -2,13 +2,13 @@
 
 namespace Menking\Mud\Core;
 
-class Login {
-    private $uuid, $state, $data;
+class Channel {
+    private $state, $data;
     private $questions, $answers = [];
+    private $playerId = null, $socketId;
 
-    public function __construct($uuid) {
-        $this->uuid = $uuid;
-
+    public function __construct($socketId) {
+        $this->socketId = $socketId;
         $this->questions = json_decode(file_get_contents('data/questions.json'), true);
     }
 
@@ -17,6 +17,18 @@ class Login {
         $this->state = $state;
 
         return $this->questions[$this->state]['message'];
+    }
+
+    public function getPlayerId() {
+        return $this->playerId;
+    }
+
+    public function setPlayerId($player_id) {
+        $this->playerId = $player_id;
+    }
+
+    public function getSocketId() {
+        return $this->socketId;
     }
 
     public function processAnswer($answer) {
@@ -83,6 +95,4 @@ class Login {
             break;
         }
     }
-
-    public function uuid() { return $this->uuid; }
 }

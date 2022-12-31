@@ -18,18 +18,18 @@ class MoveCommand extends Command {
 
         if( in_array(trim($this->cmds[0]), $exits) ) {          
             $fromRoom = $this->player->room();
-            $destRoom = $this->player->room()->getWorld()->traverse($this->player->room(), $this->cmds[0]);
+            $destRoom = $this->player->room()->area()->traverse($this->player->room(), $this->cmds[0]);
             
             if( is_null($destRoom) ) {
                 $this->player->sendMessage(Terminal::YELLOW . "You cannot go that direction\r\n" . Terminal::RESET);
             }
             else {
-                foreach($this->player->room()->getWorld()->playersInRoom($fromRoom) as $resident) {
+                foreach($this->player->room()->area()->playersInRoom($fromRoom) as $resident) {
                     if( $resident != $this->player ) {
                         $resident->sendMessage("{$this->player->name()} leaves.\r\n");
                     }
                 }
-                foreach($this->player->room()->getWorld()->playersInRoom($destRoom) as $resident) {
+                foreach($this->player->room()->area()->playersInRoom($destRoom) as $resident) {
                     $resident->sendMessage("{$this->player->name()} arrives.\r\n");
                 }
                 $this->player->setRoom($destRoom);

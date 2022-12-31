@@ -3,13 +3,12 @@
 namespace Menking\Mud\Core;
 
 class Room {
-    private $data, $world, $area;
+    private $data, $area;
 
-    public static function load($data, $world, $area) {
+    public static function load($data, Area $area) {
         $room = new self();
 
         $room->data = $data;
-        $room->world = $world;
         $room->area = $area;
 
         return $room;
@@ -25,7 +24,7 @@ class Room {
     public function lightLevel() { return isset($this->data['light-level'])?$this->data['light-level']:50; }
     public function name() { return $this->data['name']; }
     public function hasExit($direction) { return isset($this->data['exits'][$direction])?$this->data['exits'][$direction]['target']:null; }
-    public function getWorld() { return $this->world; }
+    public function area() { return $this->area; }
     public function deathTrap() { return isset($this->data['env']['death_trap'])?$this->data['env']['death_trap']:false; }
     public function restrictMobs() { return isset($this->data['env']['no_mobs'])?$this->data['env']['no_mobs']:false; }
     public function peaceful() { return isset($this->data['env']['peaceful'])?$this->data['env']['peaceful']:false; }
@@ -35,7 +34,6 @@ class Room {
     public function private() { return isset($this->data['env']['private'])?$this->data['env']['private']:false; }
     public function adminOnly() { return isset($this->data['env']['admin_only'])?$this->data['env']['admin_only']:false; }
     public function terrain() { return $this->data['terrain']; }
-    public function getArea() { return $this->area; }
 
     public function __toString() {
         return json_encode($this->data, JSON_PRETTY_PRINT);

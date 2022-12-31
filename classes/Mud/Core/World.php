@@ -8,8 +8,8 @@ use Menking\Mud\Core\Player;
 
 class World {
     private $name;
-    private $areas = [], $rooms = [], $spawn_id;
-    private $players = [], $mobs = [], $items = [];
+    private $areas = [], $defaultArea = null;
+    private $mobs = [], $items = [];
     private static $instance = null;
     private $log;
 
@@ -18,7 +18,6 @@ class World {
         $this->log->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
 
         $file = 'worlds/' . strtolower($name) . '/' . strtolower($name) . '.json';
-        //$this->name = $name;
 
         $this->log->info("Loading world $name");
 
@@ -31,17 +30,19 @@ class World {
                 throw new \Exception("Unable to load world data");
             }
             else {
-                $this->name = $data['name'];
+                $this->data['name'] = $data['name'];
 
-                foreach($data['areas'] as $area) { 
-                    $this->area[] = $area;
+                foreach($data['areas'] as $area) {
+                    $a = Area::getInstance($area, $this); 
+                    $this->areas[] = $a;
 
-                    foreach($data['rooms'] as $room) {
-                        $this->rooms[$room['id']] = Room::load($room, $this, $area);
+                    // set a default area, unless the config tells us otherwise
+                    if( is_null($this->defaultArea) ) {
+                        $this->defaultArea = $a;
+                    }
 
-                        if( isset($room['spawn']) && $room['spawn'] ) {
-                            $this->spawn_id = $room['id'];
-                        }
+                    foreach($area['rooms'] as $room) {
+                        $a->addRoom(Room::load($room, $a), (isset($room['spawn']) && $room['spawn']));
                     }
                 }
             }
@@ -101,6 +102,63 @@ class World {
         $this->log->info("Loading world {$this->name} complete");
     }
     
+    /**
+     * Get players in the world, or optionally in one Area
+     * 
+     * @param String $area_id   A particular area, as opposed to everyone in the World
+     * 
+     * @return Array
+     */
+    public function getPlayers($area_id = null) {
+        $players = [];
+
+        foreach($this->areas as $area) {
+            if( !is_null($area_id) && $area->id() == $area_id) {
+                $players = array_merge($players, $area->getPlayers());
+            }
+            else if( is_null($area_id) ) {
+                $players = array_merge($players, $area->getPlayers());
+            }
+        }
+
+        return $players;
+    }
+
+    public function removePlayer($player) {
+        foreach($this->areas as $area) {
+            if( $area->removePlayer($player) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    /**
+     * Get a player in the World
+     * 
+     * @param String $player_id
+     * @return Player | null
+     */
+    public function getPlayer($player_id) {
+        foreach($this->areas as $area) {
+            if( ($player = $area->getPlayer($player_id)) !== null ) {
+                return $player;
+            }
+        }
+
+        return null;
+    }
+
+    public function getPlayerBySocketId($socket_id) {
+        foreach($this->areas as $area) {
+            if( ($player = $area->getPlayerBySocketId($socket_id)) !== null ) {
+                return $player;
+            }
+        }
+
+        return null;        
+    }
+
     public static function getInstance($name) {
         if (self::$instance == null)
         {
@@ -111,75 +169,34 @@ class World {
     }
 
     public function addPlayer(Player $player) {
-        if( !in_array($player, $this->players) ) {
-            $this->players[] = $player;
-        }
+        $this->defaultArea->addPlayer($player);
     }
 
-    public function countPlayers($includeAdmins = true, $includeMortals = true) {
-        return count($this->players);
-    }
-
-    public function getPlayers($includeAdmins = true, $includeMortals = true) {
-        return $this->players;
-    }
-
-    public function getPlayer(String $name) {
-        foreach($this->players as $player) {
-            if( strtolower($player->name()) == strtolower($name)) {
-                return $player;
-            }
-        }
-
-        return null;
-    }
-
-    public function getPlayerWithTag($key, $value) {
-        foreach($this->players as $player) {
-            if( $player->getTag($key) == $value) {
-                return $player;
-            }
-        }
-
-        return null;
-    }
-
-    public function removePlayer(Player $player) {
-        foreach($this->players as $idx=>$currentPlayer) {
-            if( $currentPlayer == $player ) {
-                unset($this->players[$idx]);
-                break;
-            }
-        }
-    }
-
-    public function traverse(Room $fromRoom, $direction) {
-        if( $id = $fromRoom->hasExit($direction) ) {
-            return $this->getRoom($id);
+    public function getSpawnRoom($room_id = '') {
+        // use the default area and find the spawn point room
+        if( !empty($room_id) ) {
+            return $this->findRoom($room_id);
         }
         else {
-            return null;
+            return $this->defaultArea->getSpawnRoom();
         }
     }
 
-    public function playersInRoom($room) {
-        $r = [];
-        foreach($this->players as $player) {
-            if( $player->room() == $room ) {
-                $r[] = $player;
+    /**
+     * Search all areas and find the room_id specified.
+     * 
+     * @param String $room_id   the room ID of the room desired
+     * @return Room | null;
+     */
+    public function findRoom($room_id) {
+        foreach($this->areas as $area) {
+            if( $room = $area->getRoom($room_id) ) {
+                return $room;
             }
         }
-        return $r;
+
+        return null;
     }
 
-    public function name() { return $this->name; }
-
-    public function getSpawn() {
-        return $this->rooms[$this->spawn_id];
-    }
-
-    public function getRoom($id) {
-        //print_r($this->rooms);
-        return $this->rooms[$id];
-    }
+    public function name() { return $this->data['name']; }
 }
